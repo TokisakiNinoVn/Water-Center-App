@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "Trung tâm nước",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

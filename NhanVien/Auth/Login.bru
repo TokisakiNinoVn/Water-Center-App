@@ -1,0 +1,36 @@
+meta {
+  name: Login
+  type: http
+  seq: 1
+}
+
+post {
+  url: https://ttnuoc.beeio.top/api/v1/login
+  body: json
+  auth: inherit
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+      "phone": "0987654322",
+      "password": "Abc@123456"
+  }
+}
+
+script:post-response {
+  const json = res.getBody();
+  
+  if (json?.data?.access_token) {
+    bru.setEnvVar("tokenNhanVien", json.data.access_token);
+  }
+  
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

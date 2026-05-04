@@ -1,0 +1,35 @@
+meta {
+  name: register account
+  type: http
+  seq: 1
+}
+
+post {
+  url: https://ttnuoc.beeio.top/api/v1/register
+  body: json
+  auth: inherit
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+      "name": "Nguyen Van A",
+      "phone": "0987654334",
+      "email": "nguyenvanabb@example.com",
+      "password": "Abc@123456",
+      "password_confirmation": "Abc@123456",
+      "gender": "male",
+      "date_of_birth": "1995-05-15",
+      "address": "123 Đường Lê Lợi, Quận 1, TP.HCM",
+      "avatar": "https://example.com/avatar.jpg",
+      "position": "Developer",
+      "department": "IT"
+  }
+}
+
+settings {
+  encodeUrl: true
+}
