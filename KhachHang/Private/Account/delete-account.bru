@@ -5,7 +5,7 @@ meta {
 }
 
 delete {
-  url: https://ttnuoc.beeio.top/api/v1/delete-account
+  url: {{domainUrl}}/delete-account
   body: none
   auth: inherit
 }
@@ -16,4 +16,5 @@ headers {
 
 settings {
   encodeUrl: true
+  timeout: 0
 }

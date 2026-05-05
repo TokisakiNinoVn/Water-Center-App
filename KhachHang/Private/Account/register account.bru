@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: https://ttnuoc.beeio.top/api/v1/register
+  url: {{domainUrl}}/register
   body: json
   auth: inherit
 }
@@ -32,4 +32,5 @@ body:json {
 
 settings {
   encodeUrl: true
+  timeout: 0
 }

@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: https://ttnuoc.beeio.top/api/v1/change-info
+  url: {{domainUrl}}/change-info
   body: multipartForm
   auth: none
 }
@@ -16,13 +16,13 @@ headers {
 }
 
 body:multipart-form {
-  name: Nguyen Van Anh
-  phone: 0987654322
-  email: nguyenvana@example.com
-  avatar: @file(C:\Users\trieu\Downloads\小涟到底还有多少劫没渡完_1_景_来自小红书网页版.jpg)
-  ~current_password: 
-  ~password: 
-  ~password_confirmation: 
+  current_password: Abc@123
+  password: Abc@123
+  password_confirmation: Abc@123
+  ~name: Nguyễn Văn Anh
+  ~phone: 0987654322
+  ~email: nguyenvana@example.com
+  ~avatar: @file(C:\Users\trieu\Downloads\小涟到底还有多少劫没渡完_1_景_来自小红书网页版.jpg)
 }
 
 settings {
