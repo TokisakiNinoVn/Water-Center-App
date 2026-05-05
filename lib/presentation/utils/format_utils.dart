@@ -1,0 +1,63 @@
+// file: lib/helper/format_utils.dart
+import 'package:clean_water/presentation/utils/logger_utils.dart';
+import 'package:intl/intl.dart';
+
+import '../../data/configs/app_config.dart';
+
+class FormatHelper {
+  static String formatNetworkImageUrl(String url) {
+    // print("URL origin image: $url - ${AppConfig.apiUrlImage}$url");
+    return '${AppConfig.apiUrlImage}$url';
+  }
+  static String formatImageUrl(String url) {
+    // print("URL origin image: $url");
+    return url;
+  }
+
+  static String formatFileUrl(String url) {
+    // appLog("URL origin image: $url - ${AppConfig.domainUrl}/$url");
+    return '${AppConfig.domainUrl}/$url';
+  }
+
+  static String formatVideoUrl(String url) {
+    appLog("URL origin video:${AppConfig.domainUrl}/storage/$url");
+    return '${AppConfig.domainUrl}/storage/$url';
+  }
+
+  static String formatNameTechnician(String name) {
+    return name.split('-').first.trim();
+  }
+
+  static String formatDateTime(String dateString) {
+    final date = DateTime.parse(dateString);
+    return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}';
+  }
+
+  static String formatDate(String dateString) {
+    final date = DateTime.parse(dateString);
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  static DateTime parseDateTime(String dateString) {
+    return DateTime.parse(dateString);
+  }
+
+  static String formatGender(String? gender) {
+    if (gender == null) return "Không xác định";
+    return gender.toLowerCase() == "male" ? "Nam" : "Nữ";
+  }
+
+  static String formatPrice(int? price) {
+    if (price == null) return '0';
+    return NumberFormat('#,###', 'vi_VN').format(price);
+  }
+
+  static String formatDateTimeTypeDateTime(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  static String formatFirstTextUppercase(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1);
+  }
+}
