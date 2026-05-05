@@ -2,10 +2,13 @@
 import 'package:flutter/material.dart';
 
 class ColorConfig {
-  static final Color primary = Color(0xFF1C7BCC);
+  static final Color primary = Color(0xFF0574CD);
   static final Color secondary = Color(0xFF2171B8);
 
-  static final Color background = Colors.grey.shade100;
+  // Background
+  static final Color backgroundPrimary = Color(0xFFFFFFFF);
+
+  //Text color
   static final Color textPrimary = Color(0xFF175386);
   static final Color textWhite = Color(0xFFFFFFFF);
   static final Color textBlack = Color(0xFF000000);

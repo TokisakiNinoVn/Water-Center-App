@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:clean_water/presentation/routers/configs/app_router_config.dart';
+import 'package:clean_water/presentation/routers/configs/staff_router_config.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -62,6 +63,8 @@ class _AccountTabState extends State<AccountTab>
   String get _role => _user?['role'] as String? ?? 'student';
   String get _roleLabel =>
       _role == 'student' ? 'Học sinh' : _role == 'teacher' ? 'Giáo viên' : 'Người dùng';
+  String get roleUser =>  _user?['role'] ?? 'nv';
+  String get roleDisplay => roleUser == 'nv' ? "Nhân viên" : "Không xác định";
   String get _avatarLetter =>
       _displayName.isNotEmpty ? _displayName.split(' ').last[0].toUpperCase() : 'U';
 
@@ -189,7 +192,7 @@ class _AccountTabState extends State<AccountTab>
             physics: const BouncingScrollPhysics(),
             slivers: [
               // ── Header profile ─────────────────────────────────────
-              SliverToBoxAdapter(child: _buildProfileHeader()),
+              // SliverToBoxAdapter(child: _buildProfileHeader()),
 
               // ── Stats ──────────────────────────────────────────────
               // SliverToBoxAdapter(
@@ -219,7 +222,7 @@ class _AccountTabState extends State<AccountTab>
                     color: const Color(0xFF4F8EF7),
                     label: 'Chỉnh sửa thông tin cá nhân',
                     onTap: () {
-                        context.push(AppRouterConfig.updateAccount);
+                      context.push(StaffRouterConfig.updateProfile);
                     },
                   ),
                   _MenuItem(
@@ -227,7 +230,7 @@ class _AccountTabState extends State<AccountTab>
                     color: const Color(0xFF7C5CFC),
                     label: 'Đổi mật khẩu',
                     onTap: () {
-                      context.push(AppRouterConfig.changePassword);
+                      // context.push(AppRouterConfig.changePassword);
                     },
                   ),
                   _MenuItem(
@@ -236,7 +239,7 @@ class _AccountTabState extends State<AccountTab>
                     label: 'Thông báo',
                     // trailing: _Badge(label: '3'),
                     onTap: () {
-                      context.push(AppRouterConfig.notification);
+                      // context.push(AppRouterConfig.notification);
                     },
                   ),
                 ]),
@@ -412,7 +415,7 @@ class _AccountTabState extends State<AccountTab>
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        _roleLabel,
+                        roleDisplay,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 11,

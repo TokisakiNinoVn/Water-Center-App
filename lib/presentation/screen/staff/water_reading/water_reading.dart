@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 // import 'package:spa_app/services/user_discount_service.dart';
 
-class ListDiscountScreen extends StatefulWidget {
+class WaterReading extends StatefulWidget {
 
-  const ListDiscountScreen({
+  const WaterReading({
     super.key,
   });
 
   @override
-  State<ListDiscountScreen> createState() =>  _ListDiscountScreenState();
+  State<WaterReading> createState() =>  _WaterReadingState();
 }
 
-class _ListDiscountScreenState extends State<ListDiscountScreen> {
+class _WaterReadingState extends State<WaterReading> {
   // final UserDiscountService _userDiscountService = UserDiscountService();
 
   @override
@@ -47,7 +47,7 @@ class _ListDiscountScreenState extends State<ListDiscountScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text("______", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
+            const Text("Ghi số nước", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
           ],
         ),
       ),

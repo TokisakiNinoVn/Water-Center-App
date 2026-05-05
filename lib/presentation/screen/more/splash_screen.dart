@@ -10,7 +10,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:clean_water/presentation/helper/check_login_helper.dart';
 
 import '../../routers/configs/app_router_config.dart';

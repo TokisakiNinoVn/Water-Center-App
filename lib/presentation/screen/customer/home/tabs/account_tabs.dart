@@ -219,7 +219,7 @@ class _AccountTabState extends State<AccountTab>
                     color: const Color(0xFF4F8EF7),
                     label: 'Chỉnh sửa thông tin cá nhân',
                     onTap: () {
-                        context.push(AppRouterConfig.updateAccount);
+                        // context.push(AppRouterConfig.updateAccount);
                     },
                   ),
                   _MenuItem(
@@ -227,7 +227,7 @@ class _AccountTabState extends State<AccountTab>
                     color: const Color(0xFF7C5CFC),
                     label: 'Đổi mật khẩu',
                     onTap: () {
-                      context.push(AppRouterConfig.changePassword);
+                      // context.push(AppRouterConfig.changePassword);
                     },
                   ),
                   _MenuItem(
@@ -236,7 +236,7 @@ class _AccountTabState extends State<AccountTab>
                     label: 'Thông báo',
                     // trailing: _Badge(label: '3'),
                     onTap: () {
-                      context.push(AppRouterConfig.notification);
+                      // context.push(AppRouterConfig.notification);
                     },
                   ),
                 ]),

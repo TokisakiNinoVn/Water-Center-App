@@ -4,8 +4,6 @@ import 'package:clean_water/presentation/screen/staff/home/home_staff.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:clean_water/presentation/screen/account/change_password.dart';
-import 'package:clean_water/presentation/screen/account/update_account.dart';
 import 'package:clean_water/presentation/screen/auth/login_screen.dart';
 
 import '../screen/forgot_password/confirm_otp_screen.dart';

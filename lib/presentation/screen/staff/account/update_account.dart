@@ -1,34 +1,59 @@
+import 'dart:convert';
 import 'dart:io';
+import 'package:clean_water/presentation/common/snackbar.dart';
+import 'package:clean_water/presentation/providers/account_provider.dart';
+import 'package:clean_water/presentation/utils/index_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-import 'package:clean_water/presentation/providers/account_provider.dart';
+import '../../../../core/storage/index_storage.dart';
 
-class UpdateAccountScreen extends StatefulWidget {
-  const UpdateAccountScreen({super.key});
+class UpdateProfileStaff extends StatefulWidget {
+  const UpdateProfileStaff({super.key});
 
   @override
-  State<UpdateAccountScreen> createState() => _UpdateAccountScreenState();
+  State<UpdateProfileStaff> createState() => _UpdateProfileStaffState();
 }
 
-class _UpdateAccountScreenState extends State<UpdateAccountScreen>
+class _UpdateProfileStaffState extends State<UpdateProfileStaff>
     with SingleTickerProviderStateMixin {
-  final _formKey = GlobalKey<FormState>();
+  // Form keys
+  final _infoFormKey = GlobalKey<FormState>();
+  final _passwordFormKey = GlobalKey<FormState>();
+
+  // Info controllers
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _addressController = TextEditingController();
+
+  // Password controllers
+  final _currentPasswordController = TextEditingController();
+  final _newPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
+  // Password visibility
+  bool _obscureCurrentPassword = true;
+  bool _obscureNewPassword = true;
+  bool _obscureConfirmPassword = true;
 
   int _selectedGender = 0; // 0 = Nam, 1 = Nữ
   String? _avatarUrl;
   File? _localAvatar;
-  bool _isSaving = false;
+
+  // Loading states
+  bool _isUpdatingInfo = false;
+  bool _isUpdatingPassword = false;
   bool _dataLoaded = false;
-  bool _isUploadingAvatar = false; // Thêm state cho uploading
 
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
+
+  // User data
+  Map<String, dynamic>? _userData;
 
   @override
   void initState() {
@@ -50,100 +75,205 @@ class _UpdateAccountScreenState extends State<UpdateAccountScreen>
     final provider = context.read<AccountProvider>();
     final success = await provider.loadInformationAccount();
 
-    if (!mounted) return;
-
-    if (success) {
-      final data = provider.accountResponse?.data;
-      if (data is Map<String, dynamic>) {
-        _nameController.text = data['name'] ?? '';
-        _phoneController.text = data['phone'] ?? '';
-        _selectedGender = data['gender'] ?? 0;
-        _avatarUrl = data['avatar'];
+    if (success && mounted) {
+      final userMap = provider.accountResponse?.data?['user'] as Map<String, dynamic>?;
+      if (userMap != null) {
+        setState(() {
+          _userData = userMap;
+          _nameController.text = userMap['name'] ?? '';
+          _phoneController.text = userMap['phone'] ?? '';
+          _emailController.text = userMap['email'] ?? '';
+          _addressController.text = userMap['address'] ?? '';
+          _selectedGender = userMap['gender'] ?? 0;
+          _avatarUrl = userMap['avatar'];
+          _dataLoaded = true;
+        });
+      } else {
+        SnackBarHelper.showError(context, 'Không thể tải thông tin người dùng');
+        setState(() => _dataLoaded = true);
       }
-    } else {
-      _showSnack(provider.errorMessage ?? 'Không thể tải thông tin', isError: true);
+    } else if (mounted) {
+      SnackBarHelper.showError(context, 'Không thể tải thông tin');
+      setState(() => _dataLoaded = true);
     }
 
-    setState(() => _dataLoaded = true);
     _animController.forward();
   }
 
   Future<void> _pickAvatar() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 85,
-      maxWidth: 800,
-    );
-    if (picked != null) {
-      setState(() => _localAvatar = File(picked.path));
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        // imageQuality: 85,
+        // maxWidth: 800,
+      );
+
+      if (pickedFile == null){
+        appLog("Không thể chọn ảnh avatar: ");
+        return;
+      } else {
+        appLog("Chọn ảnh avatar: $pickedFile");
+        _localAvatar = File(pickedFile.path);
+        setState(() {});
+      }
+    } catch (e) {
+      appLog("Error pick avatar: $e");
+      if (mounted) {
+        SnackBarHelper.showError(context, 'Lỗi pick ảnh avatar');
+      }
     }
   }
 
-  Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+  // Validators for password
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Vui lòng nhập mật khẩu mới';
+    }
+    if (value.length < 6) {
+      return 'Mật khẩu phải có ít nhất 6 ký tự';
+    }
+    if (!RegExp(r'(?=.*[A-Z])').hasMatch(value)) {
+      return 'Mật khẩu phải có ít nhất 1 chữ in hoa';
+    }
+    if (!RegExp(r'(?=.*[0-9])').hasMatch(value)) {
+      return 'Mật khẩu phải có ít nhất 1 chữ số';
+    }
+    if (!RegExp(r'(?=.*[!@#\$&*~])').hasMatch(value)) {
+      return 'Mật khẩu phải có ít nhất 1 ký tự đặc biệt (!@#\$&*~)';
+    }
+    return null;
+  }
 
-    setState(() => _isSaving = true);
+  String? _validateConfirmPassword(String? value) {
+    if (value != _newPasswordController.text) {
+      return 'Mật khẩu xác nhận không khớp';
+    }
+    return null;
+  }
 
+  // Update personal info only
+  Future<void> _updateInfo() async {
+    if (!_infoFormKey.currentState!.validate()) return;
+
+    setState(() => _isUpdatingInfo = true);
     final provider = context.read<AccountProvider>();
 
-    // Chuẩn bị body data
-    final Map<String, dynamic> body = {
-      'name': _nameController.text.trim(),
-      'phone': _phoneController.text.trim(),
-      'gender': _selectedGender,
-    };
+    try {
+      final updatedInfo = {
+        'name': _nameController.text.trim(),
+        'phone': _phoneController.text.trim(),
+        'email': _emailController.text.trim(),
+        'gender': _selectedGender,
+        'address': _addressController.text.trim(),
+      };
 
-    bool success;
+      bool success;
+      if (_localAvatar != null) {
+        appLog("Có cập nhật avatar: $_localAvatar");
+        success = await provider.update(updatedInfo, avatar: _localAvatar);
+      } else {
+        appLog("Không cập nhật avatar: $_localAvatar");
+        success = await provider.update(updatedInfo);
+      }
 
-    // Nếu có ảnh mới được chọn, gửi kèm file (multipart/form-data)
-    if (_localAvatar != null) {
-      // Gọi API với multipart/form-data
-      success = await provider.update(body, avatar: _localAvatar);
-    } else {
-      // Không có ảnh mới, chỉ gửi JSON
-      success = await provider.update(body);
-    }
+      if (success) {
+        // Update local storage and state
+        final userForStorage = Map<String, dynamic>.from(_userData ?? {});
+        userForStorage.addAll(updatedInfo);
+        // Remove any password fields if present
+        userForStorage.remove('current_password');
+        userForStorage.remove('password');
+        userForStorage.remove('password_confirmation');
+        final String jsonString = json.encode(userForStorage);
+        await SharedPrefsService.saveValue(PrefType.string, 'user', jsonString);
 
-    setState(() => _isSaving = false);
+        setState(() {
+          _userData = userForStorage;
+          _avatarUrl = null; // will be reloaded later, but keep local preview
+        });
 
-    if (!mounted) return;
-
-    if (success) {
-      _showSnack('Cập nhật thành công!', isError: false);
-      await Future.delayed(const Duration(milliseconds: 800));
-      if (mounted) context.pop();
-    } else {
-      _showSnack(provider.errorMessage ?? 'Cập nhật thất bại', isError: true);
+        if (mounted) {
+          SnackBarHelper.showSuccess(context, 'Cập nhật thông tin thành công!');
+          // Reload user data to get fresh avatar URL
+          await provider.loadInformationAccount();
+          final newUserMap = provider.accountResponse?.data?['user'] as Map<String, dynamic>?;
+          if (newUserMap != null && mounted) {
+            setState(() {
+              _avatarUrl = newUserMap['avatar'];
+              _localAvatar = null; // clear local preview after server save
+            });
+          }
+        }
+      } else {
+        if (mounted) {
+          SnackBarHelper.showError(context, "Cập nhật thông tin thất bại");
+        }
+      }
+    } catch (e) {
+      appLog("Error updating info: $e");
+      if (mounted) {
+        SnackBarHelper.showError(context, 'Cập nhật thất bại: ${e.toString()}');
+      }
+    } finally {
+      if (mounted) setState(() => _isUpdatingInfo = false);
     }
   }
 
-  void _showSnack(String msg, {required bool isError}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(
-              isError ? Icons.error_outline : Icons.check_circle_outline,
-              color: Colors.white,
-              size: 18,
-            ),
-            const SizedBox(width: 8),
-            Expanded(child: Text(msg, style: const TextStyle(fontSize: 14))),
-          ],
-        ),
-        backgroundColor: isError ? const Color(0xFFE53935) : const Color(0xFF2E7D32),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
+  // Update password only
+  Future<void> _updatePassword() async {
+    if (!_passwordFormKey.currentState!.validate()) return;
+
+    // Check if current password is provided
+    if (_currentPasswordController.text.trim().isEmpty) {
+      SnackBarHelper.showError(context, 'Vui lòng nhập mật khẩu hiện tại');
+      return;
+    }
+
+    setState(() => _isUpdatingPassword = true);
+    final provider = context.read<AccountProvider>();
+
+    try {
+      final passwordData = {
+        'current_password': _currentPasswordController.text.trim(),
+        'password': _newPasswordController.text.trim(),
+        'password_confirmation': _confirmPasswordController.text.trim(),
+      };
+
+      final success = await provider.update(passwordData);
+
+      if (success) {
+        if (mounted) {
+          SnackBarHelper.showSuccess(context, 'Đổi mật khẩu thành công!');
+          // Clear password fields
+          _currentPasswordController.clear();
+          _newPasswordController.clear();
+          _confirmPasswordController.clear();
+        }
+      } else {
+        if (mounted) {
+          SnackBarHelper.showError(context, "Đổi mật khẩu thất bại");
+        }
+      }
+    } catch (e) {
+      appLog("Error updating password: $e");
+      if (mounted) {
+        SnackBarHelper.showError(context, 'Đổi mật khẩu thất bại: ${e.toString()}');
+      }
+    } finally {
+      if (mounted) setState(() => _isUpdatingPassword = false);
+    }
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _emailController.dispose();
+    _addressController.dispose();
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
     _animController.dispose();
     super.dispose();
   }
@@ -192,7 +322,6 @@ class _UpdateAccountScreenState extends State<UpdateAccountScreen>
         background: Stack(
           fit: StackFit.expand,
           children: [
-            // Gradient background
             Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
@@ -202,7 +331,6 @@ class _UpdateAccountScreenState extends State<UpdateAccountScreen>
                 ),
               ),
             ),
-            // Decorative circles
             Positioned(
               top: -40,
               right: -40,
@@ -227,7 +355,6 @@ class _UpdateAccountScreenState extends State<UpdateAccountScreen>
                 ),
               ),
             ),
-            // Avatar + title
             Positioned(
               bottom: 0,
               left: 0,
@@ -235,9 +362,9 @@ class _UpdateAccountScreenState extends State<UpdateAccountScreen>
               child: Column(
                 children: [
                   _buildAvatarPicker(),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 20),
                   const Text(
-                    'Chỉnh sửa hồ sơ',
+                    'Chỉnh sửa hồ sơ nhân viên',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -257,7 +384,7 @@ class _UpdateAccountScreenState extends State<UpdateAccountScreen>
 
   Widget _buildAvatarPicker() {
     return GestureDetector(
-      onTap: _isSaving ? null : _pickAvatar, // Disable khi đang saving
+      onTap: (_isUpdatingInfo || _isUpdatingPassword) ? null : _pickAvatar,
       child: Stack(
         alignment: Alignment.bottomRight,
         children: [
@@ -279,8 +406,7 @@ class _UpdateAccountScreenState extends State<UpdateAccountScreen>
               child: _buildAvatarContent(),
             ),
           ),
-          // Camera icon overlay
-          if (!_isSaving)
+          if (!_isUpdatingInfo && !_isUpdatingPassword)
             Container(
               width: 28,
               height: 28,
@@ -298,12 +424,9 @@ class _UpdateAccountScreenState extends State<UpdateAccountScreen>
   }
 
   Widget _buildAvatarContent() {
-    // Hiển thị ảnh local nếu có
     if (_localAvatar != null) {
       return Image.file(_localAvatar!, fit: BoxFit.cover);
     }
-
-    // Hiển thị ảnh từ URL nếu có
     if (_avatarUrl != null && _avatarUrl!.isNotEmpty) {
       return Image.network(
         _avatarUrl!,
@@ -317,8 +440,6 @@ class _UpdateAccountScreenState extends State<UpdateAccountScreen>
         errorBuilder: (_, __, ___) => _avatarPlaceholder(),
       );
     }
-
-    // Placeholder
     return _avatarPlaceholder();
   }
 
@@ -332,20 +453,29 @@ class _UpdateAccountScreenState extends State<UpdateAccountScreen>
   Widget _buildBody() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _sectionLabel('Thông tin cá nhân'),
-            const SizedBox(height: 12),
-            _buildCard([
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Personal information section
+          _sectionLabel('Thông tin cá nhân'),
+          const SizedBox(height: 12),
+          Form(
+            key: _infoFormKey,
+            child: _buildCard([
               _buildField(
                 controller: _nameController,
                 label: 'Họ và tên',
                 icon: Icons.badge_outlined,
                 validator: (v) =>
                 (v == null || v.trim().isEmpty) ? 'Vui lòng nhập họ tên' : null,
+              ),
+              _divider(),
+              _buildField(
+                controller: _emailController,
+                label: 'Email',
+                icon: Icons.email,
+                validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Vui lòng nhập email' : null,
               ),
               _divider(),
               _buildField(
@@ -356,20 +486,68 @@ class _UpdateAccountScreenState extends State<UpdateAccountScreen>
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return 'Vui lòng nhập số điện thoại';
                   if (!RegExp(r'^0\d{9}$').hasMatch(v.trim())) {
-                    return 'Số điện thoại không hợp lệ';
+                    return 'Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)';
                   }
                   return null;
                 },
               ),
+              _divider(),
+              _buildField(
+                controller: _addressController,
+                label: 'Địa chỉ',
+                icon: Icons.location_on_outlined,
+                validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Vui lòng nhập địa chỉ' : null,
+              ),
             ]),
-            const SizedBox(height: 20),
-            _sectionLabel('Giới tính'),
-            const SizedBox(height: 12),
-            _buildGenderSelector(),
-            const SizedBox(height: 32),
-            _buildSaveButton(),
-          ],
-        ),
+          ),
+          const SizedBox(height: 20),
+          _sectionLabel('Giới tính'),
+          const SizedBox(height: 12),
+          _buildGenderSelector(),
+          const SizedBox(height: 20),
+          // Save info button - GREEN/BLUE
+          _buildSaveInfoButton(),
+          const SizedBox(height: 24),
+
+          // Password change section
+          _sectionLabel('Đổi mật khẩu'),
+          const SizedBox(height: 12),
+          Form(
+            key: _passwordFormKey,
+            child: _buildCard([
+              _buildPasswordField(
+                controller: _currentPasswordController,
+                label: 'Mật khẩu hiện tại',
+                icon: Icons.lock_outline,
+                obscureText: _obscureCurrentPassword,
+                onToggle: () => setState(() => _obscureCurrentPassword = !_obscureCurrentPassword),
+              ),
+              _divider(),
+              _buildPasswordField(
+                controller: _newPasswordController,
+                label: 'Mật khẩu mới',
+                icon: Icons.lock_outline,
+                obscureText: _obscureNewPassword,
+                onToggle: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
+                validator: _validatePassword,
+              ),
+              _divider(),
+              _buildPasswordField(
+                controller: _confirmPasswordController,
+                label: 'Xác nhận mật khẩu mới',
+                icon: Icons.lock_outline,
+                obscureText: _obscureConfirmPassword,
+                onToggle: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                validator: _validateConfirmPassword,
+              ),
+            ]),
+          ),
+          const SizedBox(height: 20),
+          // Update password button - ORANGE/RED
+          _buildUpdatePasswordButton(),
+          const SizedBox(height: 16),
+        ],
       ),
     );
   }
@@ -425,8 +603,36 @@ class _UpdateAccountScreenState extends State<UpdateAccountScreen>
         labelStyle: const TextStyle(fontSize: 14, color: Color(0xFF9E9E9E)),
         prefixIcon: Icon(icon, size: 20, color: const Color(0xFF1565C0)),
         border: InputBorder.none,
-        contentPadding:
-        const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        errorStyle: const TextStyle(fontSize: 12),
+      ),
+    );
+  }
+
+  Widget _buildPasswordField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required bool obscureText,
+    required VoidCallback onToggle,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscureText,
+      validator: validator,
+      style: const TextStyle(fontSize: 15, color: Color(0xFF212121)),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(fontSize: 14, color: Color(0xFF9E9E9E)),
+        prefixIcon: Icon(icon, size: 20, color: const Color(0xFF1565C0)),
+        suffixIcon: IconButton(
+          icon: Icon(obscureText ? Icons.visibility_off : Icons.visibility,
+              size: 20, color: const Color(0xFF9E9E9E)),
+          onPressed: onToggle,
+        ),
+        border: InputBorder.none,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         errorStyle: const TextStyle(fontSize: 12),
       ),
     );
@@ -449,7 +655,7 @@ class _UpdateAccountScreenState extends State<UpdateAccountScreen>
   }) {
     final isSelected = _selectedGender == value;
     return GestureDetector(
-      onTap: _isSaving ? null : () => setState(() => _selectedGender = value),
+      onTap: (_isUpdatingInfo || _isUpdatingPassword) ? null : () => setState(() => _selectedGender = value),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -481,9 +687,8 @@ class _UpdateAccountScreenState extends State<UpdateAccountScreen>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Text(icon, style: const TextStyle(fontSize: 18)),
-            Icon(icon),
-
+            Icon(icon,
+                color: isSelected ? Colors.white : const Color(0xFF424242)),
             const SizedBox(width: 8),
             Text(
               label,
@@ -499,12 +704,12 @@ class _UpdateAccountScreenState extends State<UpdateAccountScreen>
     );
   }
 
-  Widget _buildSaveButton() {
+  Widget _buildSaveInfoButton() {
     return SizedBox(
       width: double.infinity,
       height: 52,
       child: ElevatedButton(
-        onPressed: _isSaving ? null : _save,
+        onPressed: _isUpdatingInfo ? null : _updateInfo,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF1565C0),
           foregroundColor: Colors.white,
@@ -514,7 +719,7 @@ class _UpdateAccountScreenState extends State<UpdateAccountScreen>
             borderRadius: BorderRadius.circular(14),
           ),
         ),
-        child: _isSaving
+        child: _isUpdatingInfo
             ? const SizedBox(
           width: 22,
           height: 22,
@@ -529,7 +734,48 @@ class _UpdateAccountScreenState extends State<UpdateAccountScreen>
             Icon(Icons.save_rounded, size: 20),
             SizedBox(width: 8),
             Text(
-              'Lưu thay đổi',
+              'Lưu thông tin',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUpdatePasswordButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: OutlinedButton(
+        onPressed: _isUpdatingPassword ? null : _updatePassword,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFFD32F2F),
+          side: const BorderSide(color: Color(0xFFD32F2F), width: 1.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+        child: _isUpdatingPassword
+            ? const SizedBox(
+          width: 22,
+          height: 22,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            color: Color(0xFFD32F2F),
+          ),
+        )
+            : const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.lock_reset_rounded, size: 20),
+            SizedBox(width: 8),
+            Text(
+              'Cập nhật mật khẩu',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

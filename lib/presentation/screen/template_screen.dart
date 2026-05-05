@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:spa_app/services/user_discount_service.dart';
+// import 'package:spa_app/services/user_discount_service.dart';
 
 class ListDiscountScreen extends StatefulWidget {
 
@@ -13,8 +13,9 @@ class ListDiscountScreen extends StatefulWidget {
 }
 
 class _ListDiscountScreenState extends State<ListDiscountScreen> {
-  final UserDiscountService _userDiscountService = UserDiscountService();
+  // final UserDiscountService _userDiscountService = UserDiscountService();
 
+  @override
   void initState() {
     super.initState();
   }
@@ -46,7 +47,7 @@ class _ListDiscountScreenState extends State<ListDiscountScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text("__________"),
+            const Text("______", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
           ],
         ),
       ),

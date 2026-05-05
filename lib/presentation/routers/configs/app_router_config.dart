@@ -10,8 +10,4 @@ class AppRouterConfig {
   static String gettingStartedSecond = "/getting-started/second";
   static String gettingStartedThird = "/getting-started/second/third";
 
-  static String changePassword = "/home/change-password";
-  static String updateAccount = "/home/update-account";
-  static String notification = "/home/notification";
-
 }

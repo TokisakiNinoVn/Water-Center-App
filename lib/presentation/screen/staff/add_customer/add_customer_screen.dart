@@ -2,19 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 // import 'package:spa_app/services/user_discount_service.dart';
 
-class ListDiscountScreen extends StatefulWidget {
+class AddCustomer extends StatefulWidget {
 
-  const ListDiscountScreen({
+  const AddCustomer({
     super.key,
   });
 
   @override
-  State<ListDiscountScreen> createState() =>  _ListDiscountScreenState();
+  State<AddCustomer> createState() =>  _AddCustomerState();
 }
 
-class _ListDiscountScreenState extends State<ListDiscountScreen> {
+class _AddCustomerState extends State<AddCustomer> {
   // final UserDiscountService _userDiscountService = UserDiscountService();
 
+  @override
   void initState() {
     super.initState();
   }
@@ -46,7 +47,7 @@ class _ListDiscountScreenState extends State<ListDiscountScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text("__________"),
+            const Text("Thêm khách hàng mới", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
           ],
         ),
       ),
