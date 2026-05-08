@@ -1,0 +1,20 @@
+meta {
+  name: Delete
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{domainUrl}}/water-history/delete/1
+  body: multipartForm
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{tokenNhanVien}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

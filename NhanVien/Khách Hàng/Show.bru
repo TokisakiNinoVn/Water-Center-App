@@ -1,0 +1,20 @@
+meta {
+  name: Show
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{domainUrl}}/client/show/6
+  body: multipartForm
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{tokenNhanVien}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

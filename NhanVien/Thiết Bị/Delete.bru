@@ -1,0 +1,30 @@
+meta {
+  name: Delete
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{domainUrl}}/water-history/store
+  body: multipartForm
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{tokenNhanVien}}
+}
+
+body:multipart-form {
+  khach_hang_id: 6
+  ma_dong_ho: 1
+  chi_so_dau: 150
+  chi_so_cuoi: 170
+  luong_tieu_thu: 20
+  ngay_ghi: 2026-05-06
+  ky: 2026-05
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

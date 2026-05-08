@@ -1,0 +1,20 @@
+meta {
+  name: List
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{domainUrl}}/client
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{tokenNhanVien}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

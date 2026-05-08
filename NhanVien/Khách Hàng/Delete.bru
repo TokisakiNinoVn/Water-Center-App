@@ -1,0 +1,20 @@
+meta {
+  name: Delete
+  type: http
+  seq: 2
+}
+
+delete {
+  url: {{domainUrl}}/client/delete/7
+  body: multipartForm
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{tokenNhanVien}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

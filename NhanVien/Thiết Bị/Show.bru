@@ -1,0 +1,20 @@
+meta {
+  name: Show
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{domainUrl}}/water-history/show/1
+  body: multipartForm
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{tokenNhanVien}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
