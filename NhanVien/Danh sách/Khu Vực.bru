@@ -5,9 +5,13 @@ meta {
 }
 
 get {
-  url: 
+  url: {{domainUrl}}/areas
   body: none
   auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{tokenNhanVien}}
 }
 
 settings {

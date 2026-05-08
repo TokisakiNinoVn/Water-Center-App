@@ -5,9 +5,17 @@ meta {
 }
 
 get {
-  url: 
+  url: {{domainUrl}}/regions
   body: none
   auth: inherit
+}
+
+params:query {
+  : 
+}
+
+headers {
+  Authorization: Bearer {{tokenNhanVien}}
 }
 
 settings {

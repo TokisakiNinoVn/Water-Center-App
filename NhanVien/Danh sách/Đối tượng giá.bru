@@ -5,13 +5,13 @@ meta {
 }
 
 get {
-  url: {{domainUrl}}/login
+  url: {{domainUrl}}/pricing-objects
   body: none
   auth: inherit
 }
 
 headers {
-  Authorization: Be
+  Authorization: Bearer {{tokenNhanVien}}
 }
 
 settings {

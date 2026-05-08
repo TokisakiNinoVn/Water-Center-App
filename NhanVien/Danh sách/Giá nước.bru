@@ -5,9 +5,13 @@ meta {
 }
 
 get {
-  url: 
+  url: {{domainUrl}}/water-prices
   body: none
   auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{tokenNhanVien}}
 }
 
 settings {
