@@ -1,0 +1,36 @@
+meta {
+  name: Login
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{domainUrl}}/customer/login
+  body: json
+  auth: inherit
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+      "phone": "0321564978",
+      "password": "0321564978"
+  }
+}
+
+script:post-response {
+  const json = res.getBody();
+  
+  if (json?.data?.access_token) {
+    bru.setEnvVar("tokenNhanVien", json.data.access_token);
+  }
+  
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

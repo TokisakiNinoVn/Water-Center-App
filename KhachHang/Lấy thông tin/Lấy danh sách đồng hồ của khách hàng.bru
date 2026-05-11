@@ -1,12 +1,12 @@
 meta {
-  name: Show
+  name: Lấy danh sách đồng hồ của khách hàng
   type: http
-  seq: 4
+  seq: 1
 }
 
 get {
-  url: {{domainUrl}}/water-meter/show/3
-  body: multipartForm
+  url: {{domainUrl}}/customer/meter-get-list
+  body: none
   auth: inherit
 }
 
