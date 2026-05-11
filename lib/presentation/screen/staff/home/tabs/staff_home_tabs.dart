@@ -1,11 +1,13 @@
 import 'package:clean_water/data/configs/color_config.dart';
-import 'package:clean_water/data/configs/menu_home_tab.dart';
+import 'package:clean_water/data/configs/menu_home_tab_staff.dart';
 import 'package:clean_water/presentation/providers/account_provider.dart';
 import 'package:clean_water/presentation/routers/configs/app_router_config.dart';
 import 'package:clean_water/presentation/utils/logger_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
+import '../../../../../core/storage/index_storage.dart';
 
 class HomeTab extends StatefulWidget {
   const HomeTab({super.key});
@@ -22,6 +24,7 @@ class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
   late Animation<Offset> _slideAnim;
   late Animation<double> _pulseAnim;
   bool _isLoading = true;
+  bool isLogin = false;
 
   // Design tokens
   static const _gradientStart = Color(0xFF0D47A1);
@@ -51,10 +54,24 @@ class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
     _pulseAnim = Tween<double>(begin: 0.95, end: 1.05).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
+    _initData();
+  }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadUserData();
-    });
+  Future<void> _initData() async {
+    await _loadLogin();
+
+    if (isLogin) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadUserData();
+      });
+    }
+  }
+
+  Future<void> _loadLogin() async {
+    isLogin = await SharedPrefsService.getValue(
+      PrefType.bool,
+      "isLogin",
+    );
   }
 
   /// Tải thông tin người dùng từ Provider (không qua local storage)
@@ -62,13 +79,23 @@ class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
     final provider = context.read<AccountProvider>();
     final success = await provider.loadInformationAccount();
 
+    // if (success && mounted) {
+    //   setState(() {
+    //     _user = provider.accountResponse?.data["user"];
+    //     appLog("$_user");
+    //     _isLoading = false;
+    //   });
+    // }
     if (success && mounted) {
       setState(() {
-        _user = provider.accountResponse?.data["user"];
+        _user = provider.accountResponse?.data?["user"];
         // appLog("$_user");
+
         _isLoading = false;
       });
-    } else if (mounted) {
+    }
+
+    else if (mounted) {
       setState(() => _isLoading = false);
     }
 
@@ -120,8 +147,8 @@ class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
               slivers: [
                 SliverToBoxAdapter(child: _buildHeader()),
                 const SliverToBoxAdapter(child: SizedBox(height: 20)),
-                SliverToBoxAdapter(child: _buildQuickStats()),
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                // SliverToBoxAdapter(child: _buildQuickStats()),
+                // const SliverToBoxAdapter(child: SizedBox(height: 24)),
                 SliverToBoxAdapter(child: _buildSectionTitle('Chức năng')),
                 const SliverToBoxAdapter(child: SizedBox(height: 12)),
                 SliverPadding(

@@ -4,14 +4,14 @@ import 'package:clean_water/presentation/routers/configs/app_router_config.dart'
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-class HomeTab extends StatefulWidget {
-  const HomeTab({super.key});
+class HomeTabCustomer extends StatefulWidget {
+  const HomeTabCustomer({super.key});
 
   @override
-  State<HomeTab> createState() => _HomeTabState();
+  State<HomeTabCustomer> createState() => _HomeTabState();
 }
 
-class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
+class _HomeTabState extends State<HomeTabCustomer> with SingleTickerProviderStateMixin {
   Map<String, dynamic>? _user;
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
