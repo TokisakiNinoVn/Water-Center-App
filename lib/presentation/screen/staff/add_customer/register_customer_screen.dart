@@ -1,19 +1,20 @@
 import 'dart:io';
 
+import 'package:clean_water/presentation/common/snackbar.dart';
 import 'package:clean_water/presentation/providers/customer_provider.dart';
+import 'package:clean_water/presentation/providers/list_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-class AddCustomer extends StatefulWidget {
-  const AddCustomer({super.key});
+class RegisterCustomerScreen extends StatefulWidget {
+  const RegisterCustomerScreen({super.key});
 
   @override
-  State<AddCustomer> createState() => _AddCustomerState();
+  State<RegisterCustomerScreen> createState() => _AddCustomerState();
 }
 
-class _AddCustomerState extends State<AddCustomer> {
+class _AddCustomerState extends State<RegisterCustomerScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _nameController = TextEditingController();
@@ -27,13 +28,26 @@ class _AddCustomerState extends State<AddCustomer> {
 
   String _gender = "male";
 
-  int? _selectedCustomerType = 1;
-  int? _selectedRegion = 1;
-  int? _selectedArea = 1;
+  // Các biến lưu giá trị được chọn (ID)
+  int? _selectedCustomerType;
+  int? _selectedRegion;
+  int? _selectedArea;
 
-  File? _avatar;
+  bool _isLoading = true;
 
-  final ImagePicker _picker = ImagePicker();
+  // Danh sách dữ liệu từ API
+  List<dynamic> clientTypes = [];
+  List<dynamic> areas = [];
+  List<dynamic> regions = [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadListData();
+    });
+  }
 
   @override
   void dispose() {
@@ -46,17 +60,61 @@ class _AddCustomerState extends State<AddCustomer> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    final XFile? picked = await _picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 70,
-    );
+  Future<void> _loadListData() async {
+    setState(() => _isLoading = true);
 
-    if (picked != null) {
+    final provider = context.read<ListProvider>();
+
+    final results = await Future.wait([
+      provider.loadClientTypes(),
+      provider.loadAreas(),
+      provider.loadRegions(),
+    ]);
+
+    if (!mounted) return;
+
+    if (results.every((e) => e)) {
       setState(() {
-        _avatar = File(picked.path);
+        clientTypes = provider.clientTypes ?? [];
+        areas = provider.areas ?? [];
+        regions = provider.regions ?? [];
+
+        // Gán giá trị mặc định (nếu có dữ liệu)
+        if (clientTypes.isNotEmpty) {
+          _selectedCustomerType = _getIdFromItem(clientTypes.first);
+        }
+        if (regions.isNotEmpty) {
+          _selectedRegion = _getIdFromItem(regions.first);
+        }
+        if (areas.isNotEmpty) {
+          _selectedArea = _getIdFromItem(areas.first);
+        }
       });
     }
+
+    setState(() => _isLoading = false);
+  }
+
+  // Hàm lấy id từ item (tuỳ theo cấu trúc dữ liệu thực tế)
+  int _getIdFromItem(dynamic item) {
+    // Giả sử item có trường 'id' hoặc 'ma_loai_khach_hang', 'vung_id',...
+    // Bạn có thể điều chỉnh theo API thực tế
+    if (item is Map) {
+      return item['id'] ?? item['ma_loai_khach_hang'] ?? 0;
+    }
+    return item.id ?? 0;
+  }
+
+  // Hàm lấy tên hiển thị từ item
+  String _getDisplayName(dynamic item) {
+    if (item is Map) {
+      return item['ten_loai'] ??
+          item['ten_vung'] ??
+          item['ten_tuyen'] ??
+          item['name'] ??
+          'Không tên';
+    }
+    return item.name ?? 'Không tên';
   }
 
   Future<void> _selectBirthDate() async {
@@ -93,31 +151,15 @@ class _AddCustomerState extends State<AddCustomer> {
       "mat_khau": _passwordController.text.trim(),
     };
 
-    // Nếu API hỗ trợ upload ảnh multipart
-    if (_avatar != null) {
-      body["anh_dai_dien"] = _avatar;
-    }
-
     final success = await provider.registerCustomer(body);
 
     if (!mounted) return;
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Thêm khách hàng thành công"),
-          backgroundColor: Colors.green,
-        ),
-      );
-
+      SnackBarHelper.showSuccess(context, "Thêm khách hàng thành công!");
       context.pop(true);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(provider.errorMessage ?? "Có lỗi xảy ra"),
-          backgroundColor: Colors.red,
-        ),
-      );
+      SnackBarHelper.showSuccess(context, provider.errorMessage ?? "Có lỗi xảy ra");
     }
   }
 
@@ -180,9 +222,117 @@ class _AddCustomerState extends State<AddCustomer> {
     );
   }
 
+  // Dropdown động từ danh sách dữ liệu
+  Widget _buildDynamicDropdown<T>({
+    required String label,
+    required List<dynamic> items,
+    required T? value,
+    required void Function(T?) onChanged,
+    String Function(dynamic)? displayNameBuilder,
+    int? Function(dynamic)? idBuilder,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF7F8FA),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: items.isEmpty
+                  ? const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Text("Không có dữ liệu"),
+              )
+                  : DropdownButton<T>(
+                value: value,
+                isExpanded: true,
+                hint: const Text("Chọn..."),
+                items: items.map((item) {
+                  final id = idBuilder != null
+                      ? idBuilder(item)
+                      : _getIdFromItem(item);
+                  final name = displayNameBuilder != null
+                      ? displayNameBuilder(item)
+                      : _getDisplayName(item);
+                  return DropdownMenuItem<T>(
+                    value: id as T?,
+                    child: Text(name),
+                  );
+                }).toList(),
+                onChanged: onChanged,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<CustomerProvider>();
+    final listProvider = context.watch<ListProvider>();
+
+    // Hiển thị loading nếu đang tải dữ liệu
+    if (_isLoading || listProvider.isLoading) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF4F7FB),
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.white,
+          elevation: 0,
+          titleSpacing: 16,
+          title: Row(
+            children: [
+              InkWell(
+                onTap: () => context.pop(),
+                borderRadius: BorderRadius.circular(40),
+                child: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(40),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    size: 18,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  "Thêm khách hàng mới",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7FB),
@@ -246,53 +396,6 @@ class _AddCustomerState extends State<AddCustomer> {
                 ),
                 child: Column(
                   children: [
-                    GestureDetector(
-                      onTap: _pickImage,
-                      child: Stack(
-                        children: [
-                          Container(
-                            width: 110,
-                            height: 110,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: const Color(0xFFE5E7EB),
-                              image: _avatar != null
-                                  ? DecorationImage(
-                                image: FileImage(_avatar!),
-                                fit: BoxFit.cover,
-                              )
-                                  : null,
-                            ),
-                            child: _avatar == null
-                                ? const Icon(
-                              Icons.person,
-                              size: 50,
-                              color: Colors.white,
-                            )
-                                : null,
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF2563EB),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.camera_alt_rounded,
-                                color: Colors.white,
-                                size: 18,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 28),
-
                     _buildTextField(
                       label: "Tên khách hàng",
                       controller: _nameController,
@@ -303,13 +406,11 @@ class _AddCustomerState extends State<AddCustomer> {
                         return null;
                       },
                     ),
-
                     _buildTextField(
                       label: "Email",
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                     ),
-
                     _buildTextField(
                       label: "Số điện thoại",
                       controller: _phoneController,
@@ -321,13 +422,11 @@ class _AddCustomerState extends State<AddCustomer> {
                         return null;
                       },
                     ),
-
                     _buildTextField(
                       label: "Địa chỉ",
                       controller: _addressController,
                       maxLines: 2,
                     ),
-
                     Padding(
                       padding: const EdgeInsets.only(bottom: 18),
                       child: Column(
@@ -341,120 +440,108 @@ class _AddCustomerState extends State<AddCustomer> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF7F8FA),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: _gender,
-                                isExpanded: true,
-                                items: const [
-                                  DropdownMenuItem(
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF7F8FA),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: RadioListTile<String>(
                                     value: "male",
-                                    child: Text("Nam"),
+                                    groupValue: _gender,
+                                    title: const Text("Nam"),
+                                    contentPadding: EdgeInsets.zero,
+                                    dense: true,
+                                    activeColor: const Color(0xFF3B82F6),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _gender = value!;
+                                      });
+                                    },
                                   ),
-                                  DropdownMenuItem(
-                                    value: "female",
-                                    child: Text("Nữ"),
-                                  ),
-                                ],
-                                onChanged: (value) {
-                                  setState(() {
-                                    _gender = value!;
-                                  });
-                                },
+                                ),
                               ),
-                            ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF7F8FA),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: RadioListTile<String>(
+                                    value: "female",
+                                    groupValue: _gender,
+                                    title: const Text("Nữ"),
+                                    contentPadding: EdgeInsets.zero,
+                                    dense: true,
+                                    activeColor: const Color(0xFF3B82F6),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _gender = value!;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ),
-
                     _buildTextField(
                       label: "Ngày sinh",
                       controller: _birthController,
                       readOnly: true,
                       onTap: _selectBirthDate,
                     ),
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildDropdownBox<int>(
-                            label: "Loại KH",
-                            value: _selectedCustomerType,
-                            items: const [
-                              DropdownMenuItem(
-                                value: 1,
-                                child: Text("Loại 1"),
-                              ),
-                              DropdownMenuItem(
-                                value: 2,
-                                child: Text("Loại 2"),
-                              ),
-                            ],
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedCustomerType = value;
-                              });
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: _buildDropdownBox<int>(
-                            label: "Vùng",
-                            value: _selectedRegion,
-                            items: const [
-                              DropdownMenuItem(
-                                value: 1,
-                                child: Text("Vùng 1"),
-                              ),
-                              DropdownMenuItem(
-                                value: 2,
-                                child: Text("Vùng 2"),
-                              ),
-                            ],
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedRegion = value;
-                              });
-                            },
-                          ),
-                        ),
-                      ],
+                    // Loại khách hàng
+                    _buildDynamicDropdown<int>(
+                      label: "Loại khách hàng",
+                      items: clientTypes,
+                      value: _selectedCustomerType,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCustomerType = value;
+                        });
+                      },
+                      displayNameBuilder: (item) => _getDisplayName(item),
+                      idBuilder: (item) => _getIdFromItem(item),
                     ),
-
-                    _buildDropdownBox<int>(
+                    // Vùng
+                    _buildDynamicDropdown<int>(
+                      label: "Vùng",
+                      items: regions,
+                      value: _selectedRegion,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedRegion = value;
+                        });
+                      },
+                      displayNameBuilder: (item) => _getDisplayName(item),
+                      idBuilder: (item) => _getIdFromItem(item),
+                    ),
+                    // Khu vực
+                    _buildDynamicDropdown<int>(
                       label: "Khu vực",
+                      items: areas,
                       value: _selectedArea,
-                      items: const [
-                        DropdownMenuItem(
-                          value: 1,
-                          child: Text("Khu vực 1"),
-                        ),
-                        DropdownMenuItem(
-                          value: 2,
-                          child: Text("Khu vực 2"),
-                        ),
-                      ],
                       onChanged: (value) {
                         setState(() {
                           _selectedArea = value;
                         });
                       },
+                      displayNameBuilder: (item) => _getDisplayName(item),
+                      idBuilder: (item) => _getIdFromItem(item),
                     ),
-
                     _buildTextField(
                       label: "Mật khẩu",
                       controller: _passwordController,
                     ),
-
                     const SizedBox(height: 10),
-
                     SizedBox(
                       width: double.infinity,
                       height: 56,
@@ -492,45 +579,6 @@ class _AddCustomerState extends State<AddCustomer> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildDropdownBox<T>({
-    required String label,
-    required T? value,
-    required List<DropdownMenuItem<T>> items,
-    required void Function(T?) onChanged,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 15,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF7F8FA),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<T>(
-                value: value,
-                isExpanded: true,
-                items: items,
-                onChanged: onChanged,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

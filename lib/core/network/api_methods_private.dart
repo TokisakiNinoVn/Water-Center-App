@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:clean_water/data/configs/app_config.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -160,7 +161,9 @@ class ApiMethodsPrivate {
           break;
       }
 
-      // appLog('[RAW RESPONSE] $url | Status: ${res.statusCode} | Body: ${res.body}');
+      if(AppConfig.isViewLogResponse) {
+        appLog('[RAW RESPONSE] $url | Status: ${res.statusCode} | Body: ${res.body}');
+      }
 
       // Handle 401 Unauthorized
       if (handle401 && res.statusCode == 401) {

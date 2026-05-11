@@ -10,8 +10,10 @@ class AccountProvider extends ChangeNotifier {
   final AccountService _accountService = AccountService();
 
   bool isLoading = false;
+
   String? errorMessage;
   ApiResponse? accountResponse;
+  Map<String, dynamic> userData = {};
 
   Future<bool> loadInformationAccount() async {
     isLoading = true;
@@ -23,6 +25,8 @@ class AccountProvider extends ChangeNotifier {
       accountResponse = res;
 
       if (res.success == true) {
+        userData = res.data;
+        // appLog("Data user: ${userData}");
         return true;
       } else {
         errorMessage = res.message;

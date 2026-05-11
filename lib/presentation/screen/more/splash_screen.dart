@@ -103,7 +103,7 @@ class _SplashScreenState extends State<SplashScreen> {
     final role = await SharedPrefsService.getValue(PrefType.string, 'role');
 
     if (isLogin && token.isNotEmpty) {
-      if (role == 'customer') {
+      if (role == 'khach_hang') {
         if (mounted) context.go(CustomerRouterConfig.homeCustomer);
       } else if (role == 'nv') {
         if (mounted) context.go(StaffRouterConfig.homeStaff);

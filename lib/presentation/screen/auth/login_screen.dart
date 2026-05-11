@@ -589,7 +589,7 @@ class LoginScreenState extends State<LoginScreen> {
     if (response && mounted) {
       final role = await SharedPrefsService.getValue(PrefType.string, 'role');
 
-      if (role == 'customer') {
+      if (role == 'khach_hang') {
         context.go(CustomerRouterConfig.homeCustomer);
       } else if (role == 'nv') {
         context.go(StaffRouterConfig.homeStaff);

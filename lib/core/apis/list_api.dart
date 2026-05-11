@@ -1,7 +1,9 @@
 import 'package:clean_water/data/configs/app_config.dart';
 
-class WaterIndexApi {
-  static const String list = '${AppConfig.apiUrl}/water-meter';
-  static const String create = '${AppConfig.apiUrl}/water-history/store';
-  static const String show = '${AppConfig.apiUrl}/water-meter/show';
+class ListApi {
+  static const String pricingObjects = '${AppConfig.apiUrl}/pricing-objects';
+  static const String waterPrices = '${AppConfig.apiUrl}/water-prices';
+  static const String clientTypes = '${AppConfig.apiUrl}/client-types';
+  static const String areas = '${AppConfig.apiUrl}/areas';
+  static const String regions = '${AppConfig.apiUrl}/regions';
 }

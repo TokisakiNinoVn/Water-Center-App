@@ -9,14 +9,14 @@ import 'package:provider/provider.dart';
 
 import '../../../../../core/storage/index_storage.dart';
 
-class HomeTab extends StatefulWidget {
-  const HomeTab({super.key});
+class HomeTabStaff extends StatefulWidget {
+  const HomeTabStaff({super.key});
 
   @override
-  State<HomeTab> createState() => _HomeTabState();
+  State<HomeTabStaff> createState() => _HomeTabState();
 }
 
-class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
+class _HomeTabState extends State<HomeTabStaff> with TickerProviderStateMixin {
   Map<String, dynamic>? _user;
   late AnimationController _animController;
   late AnimationController _pulseController;

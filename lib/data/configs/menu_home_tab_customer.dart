@@ -5,10 +5,17 @@ import 'package:flutter/material.dart';
 
 import 'color_config.dart';
 
-final List<Map<String, dynamic>> menuItems = [
+final List<Map<String, dynamic>> menuHomeCustomerItems = [
   {
     'icon': Icons.water_drop,
     'title': 'Ghi số nước',
+    'subtitle': 'Cập nhật chỉ số mới',
+    'color': ColorConfig.primary,
+    'route': StaffRouterConfig.waterReading,
+  },
+  {
+    'icon': Icons.water_drop,
+    'title': 'Tra cứu số/tiền nước',
     'subtitle': 'Cập nhật chỉ số mới',
     'color': ColorConfig.primary,
     'route': StaffRouterConfig.waterReading,
@@ -21,9 +28,9 @@ final List<Map<String, dynamic>> menuItems = [
   //   'route': "#",
   // },
   {
-    'icon': Icons.person_add,
-    'title': 'Thêm khách hàng',
-    'subtitle': 'Đăng ký khách hàng',
+    'icon': Icons.headphones,
+    'title': 'Hỗ trợ',
+    'subtitle': 'Hỗ trợ khách hàng',
     'color': ColorConfig.primary,
     'route': StaffRouterConfig.addCustomer,
   },

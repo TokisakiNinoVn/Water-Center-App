@@ -18,6 +18,10 @@ class _ListDiscountScreenState extends State<ListDiscountScreen> {
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // _loadUserData();
+    });
   }
 
   @override

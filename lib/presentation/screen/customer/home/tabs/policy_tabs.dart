@@ -1,636 +1,179 @@
-import 'dart:async';
-import 'dart:convert';
-import 'package:clean_water/presentation/routers/configs/app_router_config.dart';
+import 'package:clean_water/data/configs/color_config.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../../../core/storage/index_storage.dart';
-
-class AccountTab extends StatefulWidget {
-  const AccountTab({super.key});
-
-  @override
-  State<AccountTab> createState() => _AccountTabState();
-}
-
-class _AccountTabState extends State<AccountTab>
-    with SingleTickerProviderStateMixin {
-  Map<String, dynamic>? _user;
-
-  late AnimationController _animController;
-  late Animation<double> _fadeAnim;
-  late Animation<Offset> _slideAnim;
-
-  @override
-  void initState() {
-    super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 750),
-    );
-    _fadeAnim =
-        CurvedAnimation(parent: _animController, curve: Curves.easeOut);
-    _slideAnim = Tween<Offset>(
-      begin: const Offset(0, 0.06),
-      end: Offset.zero,
-    ).animate(
-        CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic));
-
-    _loadUserData();
-  }
-
-  Future<void> _loadUserData() async {
-    await SharedPrefsService.getValue(PrefType.string, 'user').then((value) {
-      if (value != null) {
-        setState(() {
-          _user = jsonDecode(value);
-        });
-      }
-      _animController.forward();
-    });
-  }
-
-  @override
-  void dispose() {
-    _animController.dispose();
-    super.dispose();
-  }
-
-  String get _displayName => _user?['name'] as String? ?? 'Học viên';
-  String get _email => _user?['email'] as String? ?? '';
-  String get _role => _user?['role'] as String? ?? 'student';
-  String get _roleLabel =>
-      _role == 'student' ? 'Học sinh' : _role == 'teacher' ? 'Giáo viên' : 'Người dùng';
-  String get _avatarLetter =>
-      _displayName.isNotEmpty ? _displayName.split(' ').last[0].toUpperCase() : 'U';
-
-  Future<void> _handleLogout() async {
-    final shouldLogout = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        backgroundColor: Colors.white,
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFEEEA),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(Icons.logout_rounded,
-                    color: Color(0xFFFF4B4B), size: 28),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Đăng xuất?',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF1A1A2E),
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF999999),
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => Navigator.of(context).pop(false),
-                      child: Container(
-                        height: 46,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF0F4FF),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'Hủy',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF4F8EF7),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => Navigator.of(context).pop(true),
-                      child: Container(
-                        height: 46,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF4B4B),
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFFFF4B4B).withOpacity(0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'Đăng xuất',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    if (shouldLogout == true) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.clear();
-      await prefs.setBool('isLogin', false);
-      if (context.mounted) context.go(AppRouterConfig.login);
-    }
-  }
+class PolicyCustomerTab extends StatelessWidget {
+  const PolicyCustomerTab({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4FF),
-      body: FadeTransition(
-        opacity: _fadeAnim,
-        child: SlideTransition(
-          position: _slideAnim,
-          child: CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              // ── Header profile ─────────────────────────────────────
-              SliverToBoxAdapter(child: _buildProfileHeader()),
-
-              // ── Stats ──────────────────────────────────────────────
-              // SliverToBoxAdapter(
-              //   child: Padding(
-              //     padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-              //     child: Row(
-              //       children: [
-              //         _StatChip(value: '12', label: 'Khóa học', color: const Color(0xFF4F8EF7)),
-              //         const SizedBox(width: 12),
-              //         _StatChip(value: '7', label: 'Ngày streak', color: const Color(0xFFFF6B35)),
-              //         const SizedBox(width: 12),
-              //         _StatChip(value: '1.2k', label: 'Điểm XP', color: const Color(0xFF00C48C)),
-              //       ],
-              //     ),
-              //   ),
-              // ),
-
-              // ── Section: Tài khoản ─────────────────────────────────
-              SliverToBoxAdapter(
-                child: _SectionHeader(title: 'Tài khoản'),
+      // appBar: AppBar(
+      //   title: Center(
+      //     child: Text(
+      //         "CHÍNH SÁCH BẢO MẬT \nTHÔNG TIN KHÁCH HÀNG",
+      //       style: TextStyle(fontSize: 14, ),
+      //     ),
+      //   ),
+      //   backgroundColor: ColorConfig.backgroundPrimary,
+      // ),
+      backgroundColor: ColorConfig.backgroundPrimary,
+      body: Container(
+        padding: EdgeInsets.only(top: 40, left: 10, right: 10),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Center(
+                child: Text("CHÍNH SÁCH BẢO MẬT THÔNG TIN KHÁCH HÀNG",  style: TextStyle(fontSize: 18, ),),
               ),
-                  // const SizedBox(height: 10),b
-              SliverToBoxAdapter(
-                child: _MenuGroup(items: [
-                  _MenuItem(
-                    icon: Icons.person_outline_rounded,
-                    color: const Color(0xFF4F8EF7),
-                    label: 'Chỉnh sửa thông tin cá nhân',
-                    onTap: () {
-                        // context.push(AppRouterConfig.updateAccount);
-                    },
-                  ),
-                  _MenuItem(
-                    icon: Icons.lock_outline_rounded,
-                    color: const Color(0xFF7C5CFC),
-                    label: 'Đổi mật khẩu',
-                    onTap: () {
-                      // context.push(AppRouterConfig.changePassword);
-                    },
-                  ),
-                  _MenuItem(
-                    icon: Icons.notifications_none_rounded,
-                    color: const Color(0xFFFFBB00),
-                    label: 'Thông báo',
-                    // trailing: _Badge(label: '3'),
-                    onTap: () {
-                      // context.push(AppRouterConfig.notification);
-                    },
-                  ),
-                ]),
+              SizedBox(height: 24),
+
+              _Title("1. Mục đích thu thập thông tin"),
+              _Content(
+                "Trung tâm Nước sạch TP. Thái Nguyên thu thập thông tin cá nhân của khách hàng (Hộ dân, Doanh nghiệp) nhằm mục đích:",
+              ),
+              _Bullet(
+                "Cung cấp dịch vụ cấp nước sạch, quản lý chỉ số đồng hồ và tính toán hóa đơn hàng tháng.",
+              ),
+              _Bullet(
+                "Thông báo tình trạng tạm dừng cấp nước, sửa chữa đường ống hoặc biến động giá nước.",
+              ),
+              _Bullet(
+                "Hỗ trợ xử lý các khiếu nại, phản hồi về chất lượng nước và dịch vụ kỹ thuật.",
               ),
 
-              // ── Section: Học tập ───────────────────────────────────
-              // SliverToBoxAdapter(
-              //   child: _SectionHeader(title: 'Học tập'),
-              // ),
-              // SliverToBoxAdapter(
-              //   child: _MenuGroup(items: [
-              //     _MenuItem(
-              //       icon: Icons.history_edu_rounded,
-              //       color: const Color(0xFFFF6B35),
-              //       label: 'Lịch sử học tập',
-              //       onTap: () {},
-              //     ),
-              //     _MenuItem(
-              //       icon: Icons.emoji_events_rounded,
-              //       color: const Color(0xFFFFBB00),
-              //       label: 'Thành tích & Huy hiệu',
-              //       onTap: () {},
-              //     ),
-              //     _MenuItem(
-              //       icon: Icons.bookmark_border_rounded,
-              //       color: const Color(0xFF00C48C),
-              //       label: 'Bài học đã lưu',
-              //       onTap: () {},
-              //     ),
-              //   ]),
-              // ),
+              SizedBox(height: 24),
 
-              // ── Section: Hỗ trợ ───────────────────────────────────
-              SliverToBoxAdapter(
-                child: _SectionHeader(title: 'Hỗ trợ'),
+              _Title("2. Phạm vi thu thập thông tin"),
+              _Content(
+                "Các thông tin cơ bản được lưu trữ trên hệ thống bao gồm:",
               ),
-              SliverToBoxAdapter(
-                child: _MenuGroup(items: [
-                  _MenuItem(
-                    icon: Icons.help_outline_rounded,
-                    color: const Color(0xFF4F8EF7),
-                    label: 'Trung tâm hỗ trợ',
-                    onTap: () {},
-                  ),
-                  _MenuItem(
-                    icon: Icons.info_outline_rounded,
-                    color: const Color(0xFF7C5CFC),
-                    label: 'Về ứng dụng',
-                    trailing: const Text(
-                      'v1.0.0',
-                      style: TextStyle(fontSize: 12, color: Color(0xFFAAAAAA)),
-                    ),
-                    onTap: () {},
-                  ),
-                ]),
+              _Bullet(
+                "Thông tin định danh: Họ và tên chủ hộ, Số CMND/CCCD/Mã số thuế.",
+              ),
+              _Bullet(
+                "Thông tin liên lạc: Số điện thoại, Địa chỉ lắp đặt đồng hồ, Email.",
+              ),
+              _Bullet(
+                "Thông tin dịch vụ: Chỉ số tiêu thụ nước hàng kỳ, lịch sử thanh toán, loại đối tượng áp giá.",
               ),
 
-              // ── Nút đăng xuất ──────────────────────────────────────
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
-                  child: GestureDetector(
-                    onTap: _handleLogout,
-                    child: Container(
-                      width: double.infinity,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFEEEA),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                            color: const Color(0xFFFF4B4B).withOpacity(0.25),
-                            width: 1.5),
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.logout_rounded,
-                              color: Color(0xFFFF4B4B), size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            'Đăng xuất',
-                            style: TextStyle(
-                              color: Color(0xFFFF4B4B),
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+              SizedBox(height: 24),
+
+              _Title("3. Thời gian lưu trữ thông tin"),
+              _Content(
+                "Thông tin khách hàng sẽ được lưu trữ trong suốt quá trình sử dụng dịch vụ. "
+                    "Dữ liệu lịch sử hóa đơn và chỉ số nước sẽ được lưu tối thiểu 05 năm để phục vụ tra soát.",
               ),
+
+              SizedBox(height: 24),
+
+              _Title("4. Cam kết bảo mật thông tin"),
+              _Bullet(
+                "Không bán, chia sẻ hay trao đổi thông tin cá nhân cho bên thứ ba vì mục đích thương mại.",
+              ),
+              _Bullet(
+                "Sử dụng các biện pháp kỹ thuật để bảo vệ dữ liệu khỏi truy cập trái phép.",
+              ),
+              _Bullet(
+                "Chỉ nhân viên được phân quyền mới được truy cập dữ liệu trong phạm vi công việc.",
+              ),
+
+              SizedBox(height: 24),
+
+              _Title("5. Quyền lợi của khách hàng"),
+              _Bullet(
+                "Kiểm tra thông tin cá nhân và lịch sử sử dụng nước trên hệ thống.",
+              ),
+              _Bullet(
+                "Yêu cầu cập nhật hoặc điều chỉnh thông tin nếu có sai sót.",
+              ),
+
+              SizedBox(height: 24),
+
+              _Title("6. Thông tin liên hệ"),
+              _Content("Trung tâm Nước sạch TP. Thái Nguyên"),
+              _Content("Địa chỉ: TP. Thái Nguyên"),
+              _Content("Hotline: 1900 xxxx"),
+              _Content("Website: https://ttnuoc.beeio.top"),
+              SizedBox(height: 100),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildProfileHeader() {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF4F8EF7), Color(0xFF7C5CFC)],
-        ),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
-        ),
-      ),
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 24,
-        left: 24,
-        right: 24,
-        bottom: 32,
-      ),
-      child: Column(
-        children: [
-          // Avatar + name + email
-          Row(
-            children: [
-              // Avatar
-              Container(
-                width: 68,
-                height: 68,
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white38, width: 2.5),
-                ),
-                child: Center(
-                  child: Text(
-                    _avatarLetter,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _displayName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      _email,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        _roleLabel,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Edit button
-              GestureDetector(
-                onTap: () {},
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(11),
-                  ),
-                  child: const Icon(Icons.edit_outlined,
-                      color: Colors.white, size: 18),
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
 }
 
-// ── Reusable Widgets ───────────────────────────────────────────────────────────
-//
-// class _StatChip extends StatelessWidget {
-//   final String value;
-//   final String label;
-//   final Color color;
-//   const _StatChip({required this.value, required this.label, required this.color});
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Expanded(
-//       child: Container(
-//         padding: const EdgeInsets.symmetric(vertical: 14),
-//         decoration: BoxDecoration(
-//           color: Colors.white,
-//           borderRadius: BorderRadius.circular(16),
-//           boxShadow: [
-//             BoxShadow(
-//               color: color.withOpacity(0.1),
-//               blurRadius: 10,
-//               offset: const Offset(0, 3),
-//             ),
-//           ],
-//         ),
-//         child: Column(
-//           children: [
-//             Text(
-//               value,
-//               style: TextStyle(
-//                 fontSize: 18,
-//                 fontWeight: FontWeight.w800,
-//                 color: color,
-//               ),
-//             ),
-//             const SizedBox(height: 3),
-//             Text(
-//               label,
-//               style: const TextStyle(
-//                 fontSize: 11,
-//                 color: Color(0xFF999999),
-//                 fontWeight: FontWeight.w500,
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
+class _Title extends StatelessWidget {
+  final String text;
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  const _SectionHeader({required this.title});
+  const _Title(this.text);
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Text(
-        title,
+        text,
         style: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-          color: Color(0xFFAAAAAA),
-          letterSpacing: 0.5,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
   }
 }
 
-class _MenuGroup extends StatelessWidget {
-  final List<_MenuItem> items;
-  const _MenuGroup({required this.items});
+class _Content extends StatelessWidget {
+  final String text;
+
+  const _Content(this.text);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      // margin: const EdgeInsets.symmetric(horizontal: 20),
-      margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 14,
+          height: 1.6,
+          color: Colors.black87,
+        ),
+      ),
+    );
+  }
+}
+
+class _Bullet extends StatelessWidget {
+  final String text;
+
+  const _Bullet(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "•  ",
+            style: TextStyle(fontSize: 15),
+          ),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 15,
+                height: 1.6,
+                color: Colors.black87,
+              ),
+            ),
           ),
         ],
-      ),
-      child: Column(
-        children: List.generate(items.length, (i) {
-          final item = items[i];
-          final isLast = i == items.length - 1;
-          return Column(
-            children: [
-              item,
-              if (!isLast)
-                Divider(
-                  height: 1,
-                  indent: 56,
-                  endIndent: 16,
-                  color: Colors.grey.withOpacity(0.12),
-                ),
-            ],
-          );
-        }),
-      ),
-    );
-  }
-}
-
-class _MenuItem extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String label;
-  final Widget? trailing;
-  final VoidCallback onTap;
-
-  const _MenuItem({
-    required this.icon,
-    required this.color,
-    required this.label,
-    this.trailing,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: color, size: 18),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1A1A2E),
-                ),
-              ),
-            ),
-            trailing ??
-                Icon(Icons.chevron_right_rounded,
-                    color: Colors.grey.withOpacity(0.5), size: 20),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Badge extends StatelessWidget {
-  final String label;
-  const _Badge({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFF4B4B),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-        ),
       ),
     );
   }

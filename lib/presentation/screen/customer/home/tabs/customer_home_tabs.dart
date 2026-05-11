@@ -1,8 +1,14 @@
-import 'dart:convert';
-import 'package:clean_water/core/storage/index_storage.dart';
+import 'package:clean_water/data/configs/color_config.dart';
+import 'package:clean_water/data/configs/menu_home_tab_customer.dart';
+import 'package:clean_water/data/configs/menu_home_tab_staff.dart';
+import 'package:clean_water/presentation/providers/account_provider.dart';
 import 'package:clean_water/presentation/routers/configs/app_router_config.dart';
+import 'package:clean_water/presentation/utils/logger_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import '../../../../../core/storage/index_storage.dart';
 
 class HomeTabCustomer extends StatefulWidget {
   const HomeTabCustomer({super.key});
@@ -11,585 +17,441 @@ class HomeTabCustomer extends StatefulWidget {
   State<HomeTabCustomer> createState() => _HomeTabState();
 }
 
-class _HomeTabState extends State<HomeTabCustomer> with SingleTickerProviderStateMixin {
+class _HomeTabState extends State<HomeTabCustomer> with TickerProviderStateMixin {
   Map<String, dynamic>? _user;
   late AnimationController _animController;
+  late AnimationController _pulseController;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
+  late Animation<double> _pulseAnim;
+  bool _isLoading = true;
+  bool isLogin = false;
+
+  // Design tokens
+  static const _gradientStart = Color(0xFF0D47A1);
+  static const _gradientMid = Color(0xFF1565C0);
+  static const _gradientEnd = Color(0xFF1E88E5);
+  static const _bgColor = Color(0xFFF0F4FF);
+  static const _cardColor = Colors.white;
+  static const _accentTeal = Color(0xFF00ACC1);
 
   @override
   void initState() {
     super.initState();
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 800),
     );
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+
     _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
     _slideAnim = Tween<Offset>(
-      begin: const Offset(0, 0.05),
+      begin: const Offset(0, 0.06),
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
-    _loadUserData();
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic));
+    _pulseAnim = Tween<double>(begin: 0.95, end: 1.05).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+    _initData();
   }
 
+  Future<void> _initData() async {
+    await _loadLogin();
+
+    if (isLogin) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadUserData();
+      });
+    }
+  }
+
+  Future<void> _loadLogin() async {
+    isLogin = await SharedPrefsService.getValue(
+      PrefType.bool,
+      "isLogin",
+    );
+  }
+
+  /// Tải thông tin người dùng từ Provider (không qua local storage)
   Future<void> _loadUserData() async {
-    await SharedPrefsService.getValue(PrefType.string, 'user').then((value) {
-      if (value != null) {
-        setState(() => _user = jsonDecode(value));
-      }
+    final provider = context.read<AccountProvider>();
+    final success = await provider.loadInformationAccount();
+
+    // if (success && mounted) {
+    //   setState(() {
+    //     _user = provider.accountResponse?.data["user"];
+    //     appLog("$_user");
+    //     _isLoading = false;
+    //   });
+    // }
+    if (success && mounted) {
+      setState(() {
+        _user = provider.accountResponse?.data?["user"];
+        // appLog("$_user");
+
+        _isLoading = false;
+      });
+    }
+
+    else if (mounted) {
+      setState(() => _isLoading = false);
+    }
+
+    if (mounted) {
       _animController.forward();
-    });
+    }
+  }
+
+  /// Hàm làm mới khi kéo xuống
+  Future<void> _onRefresh() async {
+    await _loadUserData();
   }
 
   @override
   void dispose() {
     _animController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
-  String get _greeting {
-    final h = DateTime.now().hour;
-    if (h < 12) return 'Good morning';
-    if (h < 18) return 'Good afternoon';
-    return 'Good evening';
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Chào buổi sáng';
+    if (hour < 18) return 'Chào buổi chiều';
+    return 'Chào buổi tối';
   }
 
-  String get _firstName {
-    final name = _user?['name'] as String? ?? 'Học viên';
-    return name.split(' ').last;
+  String _getGreetingEmoji() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return '☀️';
+    if (hour < 18) return '🌤️';
+    return '🌙';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FF),
-      body: FadeTransition(
-        opacity: _fadeAnim,
-        child: SlideTransition(
-          position: _slideAnim,
-          child: CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              SliverToBoxAdapter(child: _buildHero()),
-              SliverToBoxAdapter(child: _buildBody()),
-            ],
+      backgroundColor: ColorConfig.backgroundPrimary,
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        color: Colors.white,
+        // color: _gradientEnd,
+        // backgroundColor: Colors.white,
+        child: FadeTransition(
+          opacity: _fadeAnim,
+          child: SlideTransition(
+            position: _slideAnim,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(child: _buildHeader()),
+                const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                // SliverToBoxAdapter(child: _buildQuickStats()),
+                // const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                SliverToBoxAdapter(child: _buildSectionTitle('Chức năng')),
+                const SliverToBoxAdapter(child: SizedBox(height: 12)),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverGrid(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 1.1,
+                      crossAxisSpacing: 14,
+                      mainAxisSpacing: 14,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                          (context, index) => _buildMenuItem(context, index),
+                      childCount: menuHomeCustomerItems.length,
+                    ),
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 40)),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // ── HERO HEADER ─────────────────────────────────────────────────────────────
-
-  Widget _buildHero() {
+  Widget _buildHeader() {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
+      padding: EdgeInsets.only(top: 30),
+      margin: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [_gradientStart, _gradientMid, _gradientEnd],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1A73E8), Color(0xFF0D47A1), Color(0xFF311B92)],
         ),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(36),
-          bottomRight: Radius.circular(36),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: _gradientMid.withOpacity(0.38),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 16,
-        left: 20,
-        right: 20,
-        bottom: 28,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          // Top bar: greeting + notif + avatar
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '$_greeting 👋',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      _firstName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 26,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                  ],
-                ),
+          // Decorative circles
+          Positioned(
+            top: -20,
+            right: -20,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.06),
               ),
-              // Notification button
-              _NotifButton(
-                hasUnread: true,
-                onTap: () {
-
-                },
-              ),
-              const SizedBox(width: 10),
-              // Avatar circle
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white38, width: 1.5),
-                ),
-                child: Center(
-                  child: Text(
-                    _firstName.isNotEmpty ? _firstName[0].toUpperCase() : 'U',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 22),
-
-          // Hero intro banner
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.15)),
-            ),
-            child: Row(
-              children: [
-                const Text('🇬🇧', style: TextStyle(fontSize: 36)),
-                const SizedBox(width: 14),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Học Tiếng Anh mỗi ngày',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      SizedBox(height: 3),
-                      Text(
-                        'Streak 7 ngày liên tiếp 🔥',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {/* TODO: navigate to today's lesson */},
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text(
-                      'Bắt đầu',
-                      style: TextStyle(
-                        color: Color(0xFF1A73E8),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
             ),
           ),
-
-          const SizedBox(height: 18),
-
-          // Stats chips row
-          Row(
-            children: const [
-              _StatChip(emoji: '🔥', value: '7', label: 'STREAK'),
-              SizedBox(width: 8),
-              _StatChip(emoji: '⭐', value: '1.240', label: 'XP'),
-              SizedBox(width: 8),
-              _StatChip(emoji: '📖', value: '84', label: 'TỪ VỰNG'),
-              SizedBox(width: 8),
-              _StatChip(emoji: '🏆', value: '3', label: 'HUY HIỆU'),
-            ],
+          Positioned(
+            bottom: -30,
+            right: 40,
+            child: Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.05),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 30,
+            right: 80,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.08),
+              ),
+            ),
+          ),
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(22),
+            child: _isLoading
+                ? const SizedBox(
+              height: 100,
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              ),
+            )
+                : _buildHeaderContent(),
           ),
         ],
       ),
     );
   }
 
-  // ── BODY ────────────────────────────────────────────────────────────────────
+  Widget _buildHeaderContent() {
+    final name = _user?['name'] ?? 'Khách hàng';
+    final avatarUrl = _user?['avatar'];
+    final position = _user?['position'] ?? 'Khách hàng';
+    final roleUser = _user?['role'] ?? 'khach_hang';
+    final roleDisplay = roleUser == 'khach_hang' ? 'Khách hàng' : 'Khách hàng';
+    final greeting = _getGreeting();
+    final emoji = _getGreetingEmoji();
 
-  Widget _buildBody() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Skill categories
-          _SectionHeader(title: 'Kỹ năng của bạn', onSeeAll: () {}),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 130,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              children: const [
-                _SkillCard(
-                  emoji: '🎧',
-                  label: 'Nghe\nHiểu',
-                  count: '24 bài',
-                  startColor: Color(0xFF1A73E8),
-                  endColor: Color(0xFF1557B0),
-                ),
-                _SkillCard(
-                  emoji: '🗣️',
-                  label: 'Nói &\nPhát Âm',
-                  count: '18 bài',
-                  startColor: Color(0xFF00897B),
-                  endColor: Color(0xFF00574B),
-                ),
-                _SkillCard(
-                  emoji: '✍️',
-                  label: 'Viết\nLuận',
-                  count: '12 bài',
-                  startColor: Color(0xFFE53935),
-                  endColor: Color(0xFFB71C1C),
-                ),
-                _SkillCard(
-                  emoji: '📚',
-                  label: 'Từ\nVựng',
-                  count: '200+ từ',
-                  startColor: Color(0xFFF57C00),
-                  endColor: Color(0xFFBF360C),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 22),
-
-          // Weekly progress
-          _WeeklyProgressCard(progress: 0.62, completed: 5, total: 8),
-
-          const SizedBox(height: 22),
-
-          // Today's suggestions
-          _SectionHeader(title: 'Gợi ý hôm nay', onSeeAll: () {}),
-          const SizedBox(height: 12),
-          const _LessonTile(
-            emoji: '🎯',
-            bgColor: Color(0xFFE3F2FD),
-            title: 'IELTS Listening Practice',
-            subtitle: '10 câu hỏi • ~20 phút',
-            badgeText: '+50 XP',
-            badgeBg: Color(0xFFE8F0FE),
-            badgeColor: Color(0xFF1A73E8),
-          ),
-          const SizedBox(height: 10),
-          const _LessonTile(
-            emoji: '💬',
-            bgColor: Color(0xFFE8F5E9),
-            title: 'Daily Conversation',
-            subtitle: 'AI Speaking • ~15 phút',
-            badgeText: 'MỚI',
-            badgeBg: Color(0xFFE8F5E9),
-            badgeColor: Color(0xFF2E7D32),
-          ),
-          const SizedBox(height: 10),
-          const _LessonTile(
-            emoji: '🔤',
-            bgColor: Color(0xFFFFF3E0),
-            title: 'Phrasal Verbs - Set 5',
-            subtitle: '15 từ • ~10 phút',
-            badgeText: '🔥 HOT',
-            badgeBg: Color(0xFFFFF3E0),
-            badgeColor: Color(0xFFE65100),
-          ),
-
-          const SizedBox(height: 22),
-
-          // AI ask bar
-          GestureDetector(
-            onTap: () {/* TODO: open AI chat */},
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            // Avatar với viền glow
+            Container(
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFEDE7F6), Color(0xFFE8EAF6)],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: const Color(0xFF7C4DFF).withOpacity(0.18),
-                ),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.3),
+                    blurRadius: 12,
+                    spreadRadius: 2,
+                  ),
+                ],
               ),
-              child: Row(
-                children: const [
-                  Text('✨', style: TextStyle(fontSize: 18)),
-                  SizedBox(width: 10),
+              child: CircleAvatar(
+                radius: 32,
+                backgroundColor: Colors.white.withOpacity(0.15),
+                backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+                    ? NetworkImage(avatarUrl)
+                    : null,
+                child: avatarUrl == null || avatarUrl.isEmpty
+                    ? Text(
+                  name.isNotEmpty ? name[0].toUpperCase() : '?',
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                )
+                    : null,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    'Hỏi AI về bất kỳ từ hoặc ngữ pháp nào...',
+                    '$greeting $emoji',
                     style: TextStyle(
-                      color: Color(0xFF7C4DFF),
+                      color: Colors.white.withOpacity(0.8),
                       fontSize: 13,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: 0.2,
                     ),
                   ),
-                  Spacer(),
-                  Icon(Icons.chevron_right_rounded,
-                      color: Color(0xFF7C4DFF), size: 20),
+                  const SizedBox(height: 3),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.1,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── NOTIFICATION BUTTON ───────────────────────────────────────────────────────
-
-class _NotifButton extends StatelessWidget {
-  final bool hasUnread;
-  final VoidCallback onTap;
-  const _NotifButton({required this.hasUnread, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.18),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            const Center(
-              child: Icon(
-                Icons.notifications_outlined,
-                color: Colors.white,
-                size: 22,
-              ),
-            ),
-            if (hasUnread)
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF5252),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFF1A73E8), width: 1.5),
-                  ),
+            // Role badge hiển thị position
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
                 ),
               ),
+              child: Text(
+                roleDisplay,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// ── STAT CHIP (in hero) ───────────────────────────────────────────────────────
-
-class _StatChip extends StatelessWidget {
-  final String emoji;
-  final String value;
-  final String label;
-  const _StatChip({required this.emoji, required this.value, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.14),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withOpacity(0.12)),
+        const SizedBox(height: 20),
+        // Divider
+        Container(
+          height: 1,
+          color: Colors.white.withOpacity(0.15),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        const SizedBox(height: 16),
+        // Date info row
+        Row(
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 15)),
-            const SizedBox(height: 3),
+            const Icon(Icons.calendar_today_rounded, color: Colors.white70, size: 14),
+            const SizedBox(width: 6),
             Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
+              _formatDate(DateTime.now()),
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.85),
                 fontSize: 13,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w500,
               ),
             ),
-            const SizedBox(height: 1),
+            const Spacer(),
+            // Online indicator
+            ScaleTransition(
+              scale: _pulseAnim,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF69F0AE),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
             Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white60,
-                fontSize: 8,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.3,
+              'Đang hoạt động',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.75),
+                fontSize: 12,
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// ── SECTION HEADER ────────────────────────────────────────────────────────────
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final VoidCallback? onSeeAll;
-  const _SectionHeader({required this.title, this.onSeeAll});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-            color: Color(0xFF1A1A2E),
-          ),
-        ),
-        if (onSeeAll != null)
-          GestureDetector(
-            onTap: onSeeAll,
-            child: const Text(
-              'Xem tất cả',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1A73E8),
-              ),
-            ),
-          ),
       ],
     );
   }
-}
 
-// ── SKILL CARD ────────────────────────────────────────────────────────────────
+  String _formatDate(DateTime date) {
+    const days = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
+    final dayName = days[date.weekday - 1];
+    return '$dayName, ${date.day}/${date.month}/${date.year}';
+  }
 
-class _SkillCard extends StatelessWidget {
-  final String emoji;
-  final String label;
-  final String count;
-  final Color startColor;
-  final Color endColor;
-  const _SkillCard({
-    required this.emoji,
-    required this.label,
-    required this.count,
-    required this.startColor,
-    required this.endColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 112,
-      margin: const EdgeInsets.only(right: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [startColor, endColor],
-        ),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
         children: [
-          Text(emoji, style: const TextStyle(fontSize: 24)),
-          const Spacer(),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              height: 1.3,
+          Container(
+            width: 4,
+            height: 18,
+            decoration: BoxDecoration(
+              color: _gradientEnd,
+              borderRadius: BorderRadius.circular(4),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(width: 10),
           Text(
-            count,
+            title,
             style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1A237E),
+              letterSpacing: 0.2,
             ),
           ),
         ],
       ),
     );
   }
-}
 
-// ── WEEKLY PROGRESS CARD ──────────────────────────────────────────────────────
+  Widget _buildQuickStats() {
+    final stats = [
+      _StatData('Đã ghi', '12', 'hộ hôm nay', const Color(0xFF1565C0), Icons.check_circle_outline_rounded),
+      _StatData('Còn lại', '8', 'hộ chưa ghi', const Color(0xFFE53935), Icons.pending_outlined),
+      _StatData('Tổng', '20', 'hộ phụ trách', const Color(0xFF2E7D32), Icons.home_outlined),
+    ];
 
-class _WeeklyProgressCard extends StatelessWidget {
-  final double progress;
-  final int completed;
-  final int total;
-  const _WeeklyProgressCard({
-    required this.progress,
-    required this.completed,
-    required this.total,
-  });
-
-  @override
-  Widget build(BuildContext context) {
     return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        color: _cardColor,
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
+            color: Colors.blueGrey.withOpacity(0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -597,141 +459,206 @@ class _WeeklyProgressCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              const Icon(Icons.bar_chart_rounded, color: Color(0xFF1565C0), size: 18),
+              const SizedBox(width: 8),
               const Text(
-                'Tiến độ tuần này',
+                'Thống kê hôm nay',
                 style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF1A1A2E),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: Color(0xFF1A237E),
                 ),
               ),
-              Text(
-                '${(progress * 100).toInt()}%',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF1A73E8),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F5E9),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  '60% hoàn thành',
+                  style: TextStyle(
+                    color: Color(0xFF2E7D32),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 14),
+          // Progress bar
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: const Color(0xFFEEF2FF),
-              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF1A73E8)),
-              minHeight: 8,
+              value: 0.6,
+              minHeight: 7,
+              backgroundColor: const Color(0xFFE3F2FD),
+              valueColor: const AlwaysStoppedAnimation<Color>(_gradientEnd),
             ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: stats.map((s) => _buildStatItem(s)).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(_StatData data) {
+    return Expanded(
+      child: Column(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: data.color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(data.icon, color: data.color, size: 20),
           ),
           const SizedBox(height: 8),
           Text(
-            'Hoàn thành $completed/$total bài hôm nay • Cố lên! 💪',
+            data.count,
+            style: TextStyle(
+              color: data.color,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            data.label,
             style: const TextStyle(
               color: Color(0xFF9E9E9E),
               fontSize: 11,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Text(
+            data.sub,
+            style: const TextStyle(
+              color: Color(0xFFBDBDBD),
+              fontSize: 10,
             ),
           ),
         ],
       ),
     );
   }
-}
 
-// ── LESSON TILE ───────────────────────────────────────────────────────────────
+  Widget _buildMenuItem(BuildContext context, int index) {
+    final item = menuHomeCustomerItems[index];
+    final color = item['color'] as Color;
 
-class _LessonTile extends StatelessWidget {
-  final String emoji;
-  final Color bgColor;
-  final String title;
-  final String subtitle;
-  final String badgeText;
-  final Color badgeBg;
-  final Color badgeColor;
-  const _LessonTile({
-    required this.emoji,
-    required this.bgColor,
-    required this.title,
-    required this.subtitle,
-    required this.badgeText,
-    required this.badgeBg,
-    required this.badgeColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+    return Material(
+      color: _cardColor,
+      borderRadius: BorderRadius.circular(22),
+      child: InkWell(
+        onTap: () {
+          if (item['route'] != null) {
+            context.push(item['route']);
+          }
+        },
+        borderRadius: BorderRadius.circular(22),
+        splashColor: color.withOpacity(0.1),
+        highlightColor: color.withOpacity(0.05),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.blueGrey.withOpacity(0.07),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Text(emoji, style: const TextStyle(fontSize: 20)),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A2E),
+                // Icon with colored bg
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        color.withOpacity(0.15),
+                        color.withOpacity(0.08),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(14),
                   ),
+                  child: Icon(item['icon'], color: color, size: 26),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF9E9E9E),
-                    fontWeight: FontWeight.w600,
+                // Text
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item['title'],
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1A237E),
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      item['subtitle'],
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF9E9E9E),
+                        fontWeight: FontWeight.w400,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+                // Arrow indicator
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Container(
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.arrow_forward_rounded,
+                      color: color,
+                      size: 14,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: badgeBg,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              badgeText,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: badgeColor,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
+}
+
+class _StatData {
+  final String label;
+  final String count;
+  final String sub;
+  final Color color;
+  final IconData icon;
+
+  const _StatData(this.label, this.count, this.sub, this.color, this.icon);
 }

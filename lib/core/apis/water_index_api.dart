@@ -1,6 +1,7 @@
 import 'package:clean_water/data/configs/app_config.dart';
 
-class AccountApi {
-  static const String me = '${AppConfig.apiUrl}/user-info';
-  static const String update = '${AppConfig.apiUrl}/change-info';
+class WaterIndexApi {
+  static const String list = '${AppConfig.apiUrl}/water-meter';
+  static const String create = '${AppConfig.apiUrl}/water-history/store';
+  static const String show = '${AppConfig.apiUrl}/water-meter/show';
 }
