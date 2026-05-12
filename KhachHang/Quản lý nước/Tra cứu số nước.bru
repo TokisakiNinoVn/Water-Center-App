@@ -4,8 +4,8 @@ meta {
   seq: 1
 }
 
-post {
-  url: {{domainUrl}}/customer/water/meter-check
+get {
+  url: {{domainUrl}}/customer/water/meter-check/DH1-KH1-PDP-KP1-T01
   body: multipartForm
   auth: inherit
 }
@@ -15,7 +15,7 @@ headers {
 }
 
 body:multipart-form {
-  ~ma_dong_ho: DH1-KH1-PDP-KP1-T01 @contentType(Khi tìm kiếm: nếu có mã đồng hồ thì hiển thị lịch sử số nước của đồng hồ, không có thì hiển thị tất cả lịch sử số nước)
+  ~ma_dong_ho:  @contentType(Khi tìm kiếm: nếu có mã đồng hồ thì hiển thị lịch sử số nước của đồng hồ, không có thì hiển thị tất cả lịch sử số nước)
 }
 
 settings {
