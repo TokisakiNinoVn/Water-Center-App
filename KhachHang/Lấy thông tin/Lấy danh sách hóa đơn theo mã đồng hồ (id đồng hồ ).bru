@@ -1,0 +1,20 @@
+meta {
+  name: Lấy danh sách hóa đơn theo mã đồng hồ (id đồng hồ )
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{domainUrl}}/customer/bill-list/1
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{tokenNhanVien}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
