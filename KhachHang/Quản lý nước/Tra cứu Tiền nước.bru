@@ -4,8 +4,8 @@ meta {
   seq: 2
 }
 
-post {
-  url: {{domainUrl}}/customer/water/bill-check
+get {
+  url: {{domainUrl}}/customer/water/bill-check/HD202650001
   body: multipartForm
   auth: inherit
 }
@@ -15,7 +15,7 @@ headers {
 }
 
 body:multipart-form {
-  ma_hoa_don: HD202650001 @contentType(Khi tìm kiếm: nếu có mã đồng hồ thì hiển thị lịch sử số nước của đồng hồ, không có thì hiển thị tất cả lịch sử số nước)
+  ~ma_hoa_don: HD202650001 @contentType(Khi tìm kiếm: nếu có mã đồng hồ thì hiển thị lịch sử số nước của đồng hồ, không có thì hiển thị tất cả lịch sử số nước)
 }
 
 settings {
