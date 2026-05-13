@@ -107,6 +107,10 @@ class ApiMethodsPrivate {
         bool handle401 = true,
       }) async {
     try {
+
+      if(AppConfig.isViewLogResponse) {
+        appLog('[RAW REQUEST] $url | Body: ${body}');
+      }
       // Build URI with query parameters
       Uri uri = Uri.parse(url);
       if (queryParams != null && queryParams.isNotEmpty) {

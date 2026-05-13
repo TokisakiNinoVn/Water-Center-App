@@ -1,6 +1,6 @@
 import 'package:clean_water/data/configs/app_config.dart';
 
-class AuthApi {
+class AuthStaffApi {
   static const String login = '${AppConfig.apiUrl}/login';
   static const String logout = '${AppConfig.apiUrl}/auth/logout';
   static const String register = '${AppConfig.apiUrl}/auth/register';

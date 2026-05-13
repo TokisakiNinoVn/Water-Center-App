@@ -68,10 +68,7 @@ class AccountProvider extends ChangeNotifier {
   }
 
   // Method 2: Update có avatar (có thể có hoặc không có file)
-  Future<bool> update(
-      Map<String, dynamic> body, {
-        File? avatar,
-      }) async {
+  Future<bool> update(Map<String, dynamic> body, {File? avatar}) async {
     isLoading = true;
     errorMessage = null;
     notifyListeners();

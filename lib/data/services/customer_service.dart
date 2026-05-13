@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:clean_water/core/apis/account_api.dart';
-import 'package:clean_water/core/apis/customer_api.dart';
+import 'package:clean_water/core/apis/staff/account_api.dart';
+import 'package:clean_water/core/apis/staff/customer_api.dart';
 import 'package:clean_water/core/network/api_methods_private.dart';
 import 'package:clean_water/data/enums/http_method.dart';
 import 'package:clean_water/data/models/api_response.dart';

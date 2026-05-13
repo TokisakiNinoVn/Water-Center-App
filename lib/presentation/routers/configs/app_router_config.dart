@@ -1,5 +1,6 @@
 class AppRouterConfig {
   static String home = "/home";
+  static String homePublic = "/home-public";
   static String login = "/login";
   static String register = "/register";
   static String forgotPassword = "/forgot-password";

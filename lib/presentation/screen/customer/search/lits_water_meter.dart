@@ -1,19 +1,20 @@
 import 'package:clean_water/presentation/common/snackbar.dart';
-import 'package:clean_water/presentation/providers/staff/water_index_provider.dart';
+import 'package:clean_water/presentation/providers/customer/water_index_customer_provider.dart';
+import 'package:clean_water/presentation/routers/configs/customer_router_config.dart';
 import 'package:clean_water/presentation/routers/configs/staff_router_config.dart';
 import 'package:clean_water/presentation/utils/index_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-class WaterReading extends StatefulWidget {
-  const WaterReading({super.key});
+class ListWaterMeterCustomer extends StatefulWidget {
+  const ListWaterMeterCustomer({super.key});
 
   @override
-  State<WaterReading> createState() => _WaterReadingState();
+  State<ListWaterMeterCustomer> createState() => _WaterReadingState();
 }
 
-class _WaterReadingState extends State<WaterReading> {
+class _WaterReadingState extends State<ListWaterMeterCustomer> {
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = true;
   List<dynamic> _allItems = [];
@@ -58,8 +59,8 @@ class _WaterReadingState extends State<WaterReading> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    final provider = context.read<WaterIndexProvider>();
-    final success = await provider.loadList();
+    final provider = context.read<WaterIndexCustomerProvider>();
+    final success = await provider.loadListCustomer();
 
     if (success && mounted) {
       final items = provider.waterIndex;
@@ -128,7 +129,7 @@ class _WaterReadingState extends State<WaterReading> {
             ),
             const SizedBox(width: 12),
             const Text(
-              'Ghi số nước',
+              'Danh sách các đồng hồ nước',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ],
@@ -142,7 +143,7 @@ class _WaterReadingState extends State<WaterReading> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Tìm theo mã đồng hồ hoặc tên khách hàng',
+                hintText: 'Tìm theo mã đồng hồ hoặc số công tơ',
                 hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
                 prefixIcon:
                 Icon(Icons.search, color: Colors.grey.shade400, size: 20),
@@ -219,7 +220,6 @@ class _WaterReadingState extends State<WaterReading> {
 
                   return InkWell(
                     onTap: () {
-                      // TODO: navigate to detail/entry screen
                       context.push(StaffRouterConfig.createIndex, extra: item);
                     },
                     borderRadius: BorderRadius.circular(14),
@@ -297,25 +297,25 @@ class _WaterReadingState extends State<WaterReading> {
                                 ),
                               ),
                               // Trạng thái badge
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: _trangThaiColor(trangThai)
-                                      .withOpacity(0.1),
-                                  borderRadius:
-                                  BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  _trangThaiLabel(trangThai),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color:
-                                    _trangThaiColor(trangThai),
-                                  ),
-                                ),
-                              ),
+                              // Container(
+                              //   padding: const EdgeInsets.symmetric(
+                              //       horizontal: 10, vertical: 4),
+                              //   decoration: BoxDecoration(
+                              //     color: _trangThaiColor(trangThai)
+                              //         .withOpacity(0.1),
+                              //     borderRadius:
+                              //     BorderRadius.circular(20),
+                              //   ),
+                              //   child: Text(
+                              //     _trangThaiLabel(trangThai),
+                              //     style: TextStyle(
+                              //       fontSize: 12,
+                              //       fontWeight: FontWeight.w600,
+                              //       color:
+                              //       _trangThaiColor(trangThai),
+                              //     ),
+                              //   ),
+                              // ),
                             ],
                           ),
                           const SizedBox(height: 7),
@@ -328,65 +328,109 @@ class _WaterReadingState extends State<WaterReading> {
                           ),
                           const SizedBox(height: 6),
                           // Info rows
-                          _infoRow(
-                            icon: Icons.person_outline,
-                            label: 'KH',
-                            value: "${khachHang?['ma_khach_hang']} - ${khachHang?['ten_khach_hang']}" ?? '',
-                          ),
+                          // _infoRow(
+                          //   icon: Icons.person_outline,
+                          //   label: 'KH',
+                          //   value: "${khachHang?['ma_khach_hang']} - ${khachHang?['ten_khach_hang']}" ?? '',
+                          // ),
                           const SizedBox(height: 6),
                           _infoRow(
                             icon: Icons.location_on_outlined,
-                            label: 'Địa chỉ',
-                            value: khachHang?['dia_chi'] ?? '',
+                            label: 'Chỉ số cuối',
+                            value: (item?['chi_so_cuoi'] ?? '').toString(),
                           ),
-
                           const SizedBox(height: 6),
-                          _infoRow(
-                            icon: Icons.calendar_today_outlined,
-                            label: 'Ngày lắp',
-                            value: FormatHelper.formatDateTime(item['ngay_lap_dat'] ?? ''),
-                          ),
-                          const SizedBox(height: 10),
-                          // Footer
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                // SnackBarHelper.showSuccess(context, "Chức năng đang dược phát triển");
-                                context.push(StaffRouterConfig.createIndex, extra: item);
 
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF3B82F6),
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(40),
-                                ),
-                              ),
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.edit_outlined,
-                                    size: 16,
-                                  ),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    'Ghi số nước',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
+                          // const SizedBox(height: 6),
+                          // _infoRow(
+                          //   icon: Icons.calendar_today_outlined,
+                          //   label: 'Ngày lắp',
+                          //   value: FormatHelper.formatDateTime(item['ngay_lap_dat'] ?? ''),
+                          // ),
+                          // const SizedBox(height: 10),
+                          // Footer
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    // TODO: Điều hướng lịch sử tiền nước
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF10B981),
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(40),
                                     ),
                                   ),
-                                ],
+                                  child: const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.receipt_long_outlined,
+                                        size: 16,
+                                      ),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'LS tiền nước',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
+
+                              const SizedBox(width: 12),
+
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    context.push(
+                                      CustomerRouterConfig.saveIndex,
+                                      extra: item,
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF3B82F6),
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(40),
+                                    ),
+                                  ),
+                                  child: const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.water_drop_outlined,
+                                        size: 16,
+                                      ),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'LS số nước',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
                         ],
                       ),
                     ),

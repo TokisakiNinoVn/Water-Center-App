@@ -333,6 +333,42 @@ class _AccountTabState extends State<AccountTab>
                   ),
                 ),
               ),
+
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
+                  child: GestureDetector(
+                    onTap: _handleLogout,
+                    child: Container(
+                      width: double.infinity,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFEEEA),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                            color: const Color(0xFFFF4B4B).withOpacity(0.25),
+                            width: 1.5),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.logout_rounded,
+                              color: Color(0xFFFF4B4B), size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'Xóa tài khoản',
+                            style: TextStyle(
+                              color: Color(0xFFFF4B4B),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

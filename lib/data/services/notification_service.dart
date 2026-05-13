@@ -1,4 +1,4 @@
-import 'package:clean_water/core/apis/notification_api.dart';
+import 'package:clean_water/core/apis/staff/notification_api.dart';
 import 'package:clean_water/core/network/api_methods_private.dart';
 import 'package:clean_water/data/enums/http_method.dart';
 import 'package:clean_water/data/models/api_response.dart';

@@ -1,26 +1,30 @@
+import 'dart:io';
+
 import 'package:clean_water/presentation/common/snackbar.dart';
+import 'package:clean_water/presentation/providers/customer/water_index_customer_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'dart:math';
 import 'package:intl/intl.dart';
 import 'dart:ui' as ui;
+import 'package:image_picker/image_picker.dart';
 
 import 'package:clean_water/presentation/providers/staff/water_index_provider.dart';
 import 'package:clean_water/presentation/utils/logger_utils.dart';
 
-class CreateIndexScreen extends StatefulWidget {
+class CreateIndexCustomer extends StatefulWidget {
   final Map<String, dynamic> data;
-  const CreateIndexScreen({
+  const CreateIndexCustomer({
     super.key,
     required this.data,
   });
 
   @override
-  State<CreateIndexScreen> createState() => _CreateIndexScreenState();
+  State<CreateIndexCustomer> createState() => _CreateIndexScreenState();
 }
 
-class _CreateIndexScreenState extends State<CreateIndexScreen> {
+class _CreateIndexScreenState extends State<CreateIndexCustomer> {
   bool _isLoading = false;
   bool _isSubmitting = false;
   List<dynamic> _historyList = [];
@@ -28,6 +32,8 @@ class _CreateIndexScreenState extends State<CreateIndexScreen> {
   int _lastIndex = 0;
   final TextEditingController _newIndexController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  File? _localImage;
+  String? _imageError;
 
   @override
   void initState() {
@@ -37,6 +43,24 @@ class _CreateIndexScreenState extends State<CreateIndexScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
     });
+  }
+
+  Future<void> _pickImageProve(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: source,
+        imageQuality: 85,
+      );
+      if (pickedFile == null) return;
+      setState(() {
+        _localImage = File(pickedFile.path);
+        _imageError = null;   // xoá lỗi nếu đã có
+      });
+    } catch (e) {
+      appLog("Error pick image: $e");
+      if (mounted) SnackBarHelper.showError(context, 'Lỗi chọn ảnh');
+    }
   }
 
   /// Lấy dữ liệu từ API qua provider
@@ -70,6 +94,7 @@ class _CreateIndexScreenState extends State<CreateIndexScreen> {
   /// Ghi chỉ số nước mới
   Future<void> _submitNewIndex() async {
     if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) return;
 
     final int newIndex = int.parse(_newIndexController.text);
     if (newIndex < _lastIndex) {
@@ -85,7 +110,7 @@ class _CreateIndexScreenState extends State<CreateIndexScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      final provider = context.read<WaterIndexProvider>();
+      final provider = context.read<WaterIndexCustomerProvider>();
       int indexDifference = (newIndex - _lastIndex).abs();
 
       Map<String, dynamic> body = {
@@ -97,25 +122,27 @@ class _CreateIndexScreenState extends State<CreateIndexScreen> {
         "ngay_ghi": DateFormat('yyyy-MM-dd').format(DateTime.now()),
         "ky": DateFormat('yyyy-MM').format(DateTime.now()),
       };
-      final success = await provider.saveWaterIndex(body);
+
+      if (_localImage == null) {
+        setState(() => _imageError = 'Vui lòng chọn ảnh chứng minh');
+        return;
+      }
+
+      setState(() => _imageError = null);
+
+      final success = await provider.saveWaterIndex(
+        body,
+        file: _localImage!,
+      );
 
       if (success && mounted) {
         // Sau khi lưu thành công, tải lại dữ liệu mới từ server
         await _loadData();
         _newIndexController.clear();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Ghi chỉ số nước thành công!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        SnackBarHelper.showSuccess(context, 'Ghi chỉ số nước thành công!');
+        context.pop();
       } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Ghi chỉ số thất bại, vui lòng thử lại'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        SnackBarHelper.showSuccess(context, 'Ghi chỉ số thất bại, vui lòng thử lại');
       }
     } catch (e) {
       appLog('Lỗi khi ghi chỉ số: $e');
@@ -167,8 +194,11 @@ class _CreateIndexScreenState extends State<CreateIndexScreen> {
             ),
             const SizedBox(width: 12),
             const Text(
-              "Lưu số nước",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              "Ghi số nước",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18
+              ),
             ),
           ],
         ),
@@ -483,8 +513,8 @@ class _CreateIndexScreenState extends State<CreateIndexScreen> {
             children: [
               const Row(
                 children: [
-                  Icon(Icons.edit_note, color: Color(0xFF2A6DFF), size: 20),
-                  SizedBox(width: 8),
+                  // Icon(Icons.edit_note, color: Color(0xFF2A6DFF), size: 20),
+                  // SizedBox(width: 8),
                   Text(
                     'Nhập chỉ số mới',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
@@ -497,32 +527,138 @@ class _CreateIndexScreenState extends State<CreateIndexScreen> {
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   hintText: 'Nhập chỉ số nước (m³)',
-                  prefixIcon: const Icon(Icons.water_drop, color: Color(0xFF2A6DFF)),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide.none,
                   ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF0EA5E9),
+                      width: 1.6,
+                    ),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(
+                      color: Colors.red,
+                      width: 1.4,
+                    ),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(
+                      color: Colors.red,
+                      width: 1.6,
+                    ),
+                  ),
                   filled: true,
                   fillColor: const Color(0xFFF8FAFC),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 10,
+                    horizontal: 14,
+                  ),
                   suffixText: 'm³',
-                  suffixStyle: const TextStyle(color: Color(0xFF64748B)),
+                  suffixStyle: const TextStyle(
+                    color: Color(0xFF64748B),
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Vui lòng nhập chỉ số nước';
                   }
+
                   final int? val = int.tryParse(value);
+
                   if (val == null) {
                     return 'Chỉ số phải là số nguyên';
                   }
+
                   if (val < _lastIndex) {
-                    return 'Chỉ số mới phải >= $_lastIndex';
+                    return 'Chỉ số mới phải lớn hơn hoặc bằng $_lastIndex.';
                   }
+
                   return null;
                 },
               ),
+              const SizedBox(height: 20),
+
+              const Row(
+                children: [
+                  Text(
+                    'Tải lên ảnh chứng minh',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _pickImageProve(ImageSource.gallery),
+                      icon: const Icon(Icons.photo_library, size: 18),
+                      label: const Text('Thư viện'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _pickImageProve(ImageSource.camera),
+                      icon: const Icon(Icons.camera_alt, size: 18),
+                      label: const Text('Chụp ảnh'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              if (_localImage != null)
+                Container(
+                  height: 120,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.file(_localImage!, fit: BoxFit.cover),
+                  ),
+                ),
+
+              if (_imageError != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red.shade700, size: 16),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          _imageError!,
+                          style: TextStyle(color: Colors.red.shade700, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
               const SizedBox(height: 24),
+
               SizedBox(
                 width: double.infinity,
                 height: 52,
@@ -531,26 +667,14 @@ class _CreateIndexScreenState extends State<CreateIndexScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2A6DFF),
                     foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   child: _isSubmitting
-                      ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                      : const Text(
-                    'LƯU CHỈ SỐ',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 0.5),
-                  ),
+                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
+                      : const Text('GHI SỐ NƯỚC', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                 ),
               ),
+
             ],
           ),
         ),

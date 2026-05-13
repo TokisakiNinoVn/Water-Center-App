@@ -11,14 +11,14 @@ final List<Map<String, dynamic>> menuHomeCustomerItems = [
     'title': 'Ghi số nước',
     'subtitle': 'Cập nhật chỉ số mới',
     'color': ColorConfig.primary,
-    'route': StaffRouterConfig.waterReading,
+    'route': CustomerRouterConfig.listWaterMeter,
   },
   {
     'icon': Icons.water_drop,
     'title': 'Tra cứu số/tiền nước',
     'subtitle': 'Cập nhật chỉ số mới',
     'color': ColorConfig.primary,
-    'route': StaffRouterConfig.waterReading,
+    'route': CustomerRouterConfig.listSearchWaterMeter,
   },
   // {
   //   'icon': Icons.history,
@@ -32,7 +32,7 @@ final List<Map<String, dynamic>> menuHomeCustomerItems = [
     'title': 'Hỗ trợ',
     'subtitle': 'Hỗ trợ khách hàng',
     'color': ColorConfig.primary,
-    'route': StaffRouterConfig.addCustomer,
+    'route': "/",
   },
   // {
   //   'icon': Icons.pie_chart,

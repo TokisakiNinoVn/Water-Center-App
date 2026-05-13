@@ -1,6 +1,7 @@
 // File: splash_screen.dart
 import 'package:clean_water/core/storage/index_storage.dart';
 import 'package:clean_water/data/configs/app_config.dart';
+import 'package:clean_water/data/extensions/login_type_role_extension.dart';
 import 'package:clean_water/presentation/common/snackbar.dart';
 import 'package:clean_water/presentation/routers/configs/customer_router_config.dart';
 import 'package:clean_water/presentation/routers/configs/staff_router_config.dart';
@@ -100,12 +101,17 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
 
-    final role = await SharedPrefsService.getValue(PrefType.string, 'role');
+    final roleValue = await SharedPrefsService.getValue(
+      PrefType.string,
+      'role',
+    );
+
+    final role = LoginTypeRoleExtension.fromValue(roleValue);
 
     if (isLogin && token.isNotEmpty) {
-      if (role == 'khach_hang') {
+      if (role.isCustomer) {
         if (mounted) context.go(CustomerRouterConfig.homeCustomer);
-      } else if (role == 'nv') {
+      } else if (role.isStaff) {
         if (mounted) context.go(StaffRouterConfig.homeStaff);
       } else {
         if (mounted) SnackBarHelper.showWaring(context, "Role: $role chưa có màn hình!");
@@ -113,7 +119,7 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
 
-    if (mounted) context.go(AppRouterConfig.login);
+    if (mounted) context.go(AppRouterConfig.homePublic);
   }
 
   @override
@@ -162,6 +168,15 @@ class _SplashScreenState extends State<SplashScreen> {
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 10),
+        const Text(
+          AppConfig.appSlogan,
+          style: TextStyle(
+            fontSize: 16,
+            // fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
         ),

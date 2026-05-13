@@ -1,7 +1,8 @@
 import 'dart:io';
 
-import 'package:clean_water/core/apis/account_api.dart';
-import 'package:clean_water/core/apis/water_index_api.dart';
+import 'package:clean_water/core/apis/customer/water_index_api.dart';
+import 'package:clean_water/core/apis/staff/account_api.dart';
+import 'package:clean_water/core/apis/staff/water_index_api.dart';
 import 'package:clean_water/core/network/api_methods_private.dart';
 import 'package:clean_water/data/enums/http_method.dart';
 import 'package:clean_water/data/models/api_response.dart';
@@ -34,31 +35,31 @@ class WaterIndexService {
     );
   }
 
-  // Future<ApiResponse> update(Map<String, dynamic> body) async {
-  //   return await ApiMethodsPrivate.request(
-  //     HttpMethod.post,
-  //     AccountApi.update,
-  //     body: body,
-  //   );
-  // }
-  //
-  // // SỬA: Thêm tham số avatarFile
-  // Future<ApiResponse> updateWithAvatar(
-  //     Map<String, dynamic> body, {
-  //       required File avatarFile,
-  //     }) async {
-  //   // Chuyển đổi body Map thành Map<String, String> cho fields
-  //   final Map<String, String> fields = {};
-  //   body.forEach((key, value) {
-  //     fields[key] = value.toString();
-  //   });
-  //
-  //   return await ApiMethodsPrivate.postFormData(
-  //     AccountApi.update,
-  //     fields: fields,
-  //     files: {
-  //       'avatar': avatarFile, // Key 'avatar' là tên field trên server
-  //     },
-  //   );
-  // }
+  // Customer
+  Future<ApiResponse> listWaterMeterCustomer() async {
+    return await ApiMethodsPrivate.request(
+      HttpMethod.get,
+      WaterIndexCustomerApi.listWaterMeter,
+    );
+  }
+
+  Future<ApiResponse> saveIndexCustomer(
+    Map<String, dynamic> data,
+    { required File imageFile }
+  ) async {
+
+    final Map<String, String> fields = {};
+    data.forEach((key, value) {
+      fields[key] = value.toString();
+    });
+    // appLog("Data save water index: $data");
+
+    return await ApiMethodsPrivate.postFormData(
+      WaterIndexCustomerApi.recordIndex,
+      fields: fields,
+      files: {
+        'anh_minh_chung': imageFile,
+      },
+    );
+  }
 }

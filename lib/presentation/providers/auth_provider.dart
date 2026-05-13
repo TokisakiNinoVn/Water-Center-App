@@ -1,3 +1,6 @@
+import 'package:clean_water/data/configs/role_user_config.dart';
+import 'package:clean_water/data/enums/login_type_role.dart';
+import 'package:clean_water/data/extensions/login_type_role_extension.dart';
 import 'package:clean_water/data/models/api_response.dart';
 import 'package:clean_water/data/services/auth_service.dart';
 import 'package:clean_water/presentation/utils/index_utils.dart';
@@ -13,26 +16,65 @@ class AuthProvider extends ChangeNotifier {
   String? errorMessage;
   ApiResponse? authResponse;
 
-  Future<bool> login(Map<String, dynamic> data) async {
+  // Role hiện tại sau khi login
+  LoginTypeRole? currentLoginRole;
+
+  Future<bool> login(
+      LoginTypeRole loginType,
+      Map<String, dynamic> data,
+      ) async {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
 
     try {
-      final res = await _authService.login(data);
+      final res = await _authService.login(loginType, data);
 
       authResponse = res;
       final dataLogin = res.data['data'];
 
       if (res.success == true) {
-        SharedPrefsService.saveValue(PrefType.string, 'token', dataLogin['access_token'] ?? '');
-        SharedPrefsService.saveValue(PrefType.bool, 'isLogin', true);
-        SharedPrefsService.saveValue(PrefType.string, 'role', dataLogin['permission']); //nv
-        SharedPrefsService.saveValue(
+
+        final roleValue = dataLogin['permission'];
+
+        // Convert sang enum/object
+        currentLoginRole = LoginTypeRoleExtension.fromValue(roleValue);
+
+        // Save local
+        await SharedPrefsService.saveValue(
           PrefType.string,
-          'user',
-          dataLogin['user'] ?? {},
+          'role',
+          roleValue,
         );
+
+        await SharedPrefsService.saveValue(
+          PrefType.string,
+          'token',
+          dataLogin['access_token'] ?? '',
+        );
+
+        await SharedPrefsService.saveValue(
+          PrefType.bool,
+          'isLogin',
+          true,
+        );
+
+        if (currentLoginRole?.isStaff == true) {
+          await SharedPrefsService.saveValue(
+            PrefType.string,
+            'user',
+            dataLogin['user'] ?? {},
+          );
+        } else {
+          await SharedPrefsService.saveValue(
+            PrefType.string,
+            'user',
+            dataLogin['khach_hang'] ?? {},
+          );
+        }
+
+        // appLog("Save role: ${currentLoginRole?.value}");
+
         return true;
       } else {
         errorMessage = res.message;
@@ -40,8 +82,9 @@ class AuthProvider extends ChangeNotifier {
       }
 
     } catch (e) {
-      errorMessage = 'Đã xảy ra lỗi: $e';
-      appLog("Đã xảy ra lỗi: $e");
+      String messageError = 'Đã xảy ra lỗi: $e';
+      errorMessage = messageError;
+      appLog(messageError);
       return false;
     } finally {
       isLoading = false;

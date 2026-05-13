@@ -5,6 +5,7 @@ class AppConfig {
   static const String appVersionBuild = "1";
   static const String appName = "Trung tâm nước";
   static const String appDescription = "Trung tâm nước Thái Nguyên";
+  static const String appSlogan = "Tra cứu dễ dàng — sử dụng thuận tiện.";
   static const String appNameUppercase = "NƯỚC SẠCH THÁI NGUYÊN";
   static const String logoAppUrl = "assets/images/logo-no-background.png";
   static const String emailSupport = "nuocsach.thainguyen@gmail.com";
@@ -23,5 +24,7 @@ class AppConfig {
   static const bool isProduction = true;
   static const bool isDevelop = true;
   static const bool isSkipGettingStarted = true;
+
   static const bool isViewLogResponse  = false;
+  static const bool isViewBodyRequest  = false;
 }

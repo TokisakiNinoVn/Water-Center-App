@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:clean_water/core/apis/account_api.dart';
+import 'package:clean_water/core/apis/staff/account_api.dart';
 import 'package:clean_water/core/network/api_methods_private.dart';
 import 'package:clean_water/data/enums/http_method.dart';
 import 'package:clean_water/data/models/api_response.dart';
@@ -25,10 +25,7 @@ class AccountService {
   }
 
   // SỬA: Thêm tham số avatarFile
-  Future<ApiResponse> updateWithAvatar(
-      Map<String, dynamic> body, {
-        required File avatarFile,
-      }) async {
+  Future<ApiResponse> updateWithAvatar(Map<String, dynamic> body, {required File avatarFile}) async {
     // Chuyển đổi body Map thành Map<String, String> cho fields
     final Map<String, String> fields = {};
     body.forEach((key, value) {
