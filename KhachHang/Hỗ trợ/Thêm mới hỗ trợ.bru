@@ -1,11 +1,11 @@
 meta {
-  name: Đọc chi tiết thông báo
+  name: Thêm mới hỗ trợ
   type: http
-  seq: 2
+  seq: 1
 }
 
-get {
-  url: {{domainUrl}}/customer/notification/3
+post {
+  url: {{domainUrl}}/customer/support/store-new-support
   body: none
   auth: inherit
 }
