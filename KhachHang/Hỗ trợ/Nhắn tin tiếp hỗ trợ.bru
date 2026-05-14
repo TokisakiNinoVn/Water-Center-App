@@ -1,0 +1,25 @@
+meta {
+  name: Nhắn tin tiếp hỗ trợ
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{domainUrl}}/customer/support/store-reply-support/3
+  body: multipartForm
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{tokenKhachHang}}
+}
+
+body:multipart-form {
+  noi_dung: Đồng hồ nước lỗi
+  file_dinh_kem: 
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

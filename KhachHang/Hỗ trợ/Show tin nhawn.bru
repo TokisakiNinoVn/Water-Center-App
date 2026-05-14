@@ -1,0 +1,20 @@
+meta {
+  name: Show tin nhawn
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{domainUrl}}/customer/support/show-support/3
+  body: multipartForm
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{tokenKhachHang}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

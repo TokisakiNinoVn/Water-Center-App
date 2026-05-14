@@ -6,12 +6,17 @@ meta {
 
 post {
   url: {{domainUrl}}/customer/support/store-new-support
-  body: none
+  body: multipartForm
   auth: inherit
 }
 
 headers {
   Authorization: Bearer {{tokenKhachHang}}
+}
+
+body:multipart-form {
+  tieu_de: Đồng hồ nước lỗi
+  noi_dung: đồng hồ nước của tôi đang lỗi không chạy
 }
 
 settings {
