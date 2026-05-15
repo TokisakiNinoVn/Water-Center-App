@@ -1,0 +1,20 @@
+meta {
+  name: Chi tiết hóa đơn
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{domainUrl}}/customer/bill-detail/5
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{tokenKhachHang}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
