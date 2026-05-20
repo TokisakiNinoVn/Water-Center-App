@@ -1,0 +1,20 @@
+meta {
+  name: Xem thông tin tài khoản
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{domainUrl}}/customer/profile/
+  body: multipartForm
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{tokenKhachHang}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -1,0 +1,30 @@
+meta {
+  name: Cập nhật thông tin tài khoản
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{domainUrl}}/customer/profile/update
+  body: multipartForm
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{tokenKhachHang}}
+}
+
+body:multipart-form {
+  ten_khach_hang: Nguyễn Ngọc Nganj
+  so_dien_thoai: 0321564978
+  email: kh1@gmail.com
+  gioi_tinh: male
+  ngay_sinh: 2016-05-11
+  avatar: 
+  dia_chi: Địa chỉ hiện tại
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
