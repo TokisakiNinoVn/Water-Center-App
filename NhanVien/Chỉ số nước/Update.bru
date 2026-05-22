@@ -1,17 +1,22 @@
 meta {
-  name: Show
+  name: Update
   type: http
-  seq: 3
+  seq: 5
 }
 
-get {
-  url: {{domainUrl}}/water-history/show/25
+post {
+  url: {{domainUrl}}/water-history/25/update
   body: multipartForm
   auth: inherit
 }
 
 headers {
   Authorization: Bearer {{tokenNhanVien}}
+}
+
+body:multipart-form {
+  chi_so_cuoi: 12
+  anh_minh_chung: 
 }
 
 settings {
