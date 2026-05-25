@@ -377,7 +377,7 @@ class _WaterReadingState extends State<ListWaterMeterCustomer> {
                                       ),
                                       SizedBox(width: 6),
                                       Text(
-                                        'LS tiền nước',
+                                        'Các hóa đơn',
                                         style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
@@ -394,7 +394,7 @@ class _WaterReadingState extends State<ListWaterMeterCustomer> {
                                 child: ElevatedButton(
                                   onPressed: () {
                                     context.push(
-                                      CustomerRouterConfig.saveIndex,
+                                      CustomerRouterConfig.historyIndex,
                                       extra: item,
                                     );
                                   },

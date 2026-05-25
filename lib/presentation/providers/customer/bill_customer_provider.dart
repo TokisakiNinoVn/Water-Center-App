@@ -1,30 +1,36 @@
 import 'dart:io';
 
 import 'package:clean_water/data/models/api_response.dart';
+import 'package:clean_water/data/services/account_service.dart';
 import 'package:clean_water/data/services/notification_service.dart';
+import 'package:clean_water/data/services/water_index_service.dart';
 import 'package:clean_water/presentation/utils/index_utils.dart';
 import 'package:flutter/material.dart';
-import '../../core/storage/index_storage.dart';
 
-class NotificationProvider extends ChangeNotifier {
+class NotificationCustomerProvider extends ChangeNotifier {
   final NotificationService _notificationService = NotificationService();
 
+  bool isLoadingList = false;
   bool isLoading = false;
-  String? errorMessage;
-  ApiResponse? notificationResponse;
 
-  Future<bool> loadList() async {
-    isLoading = true;
+  String? errorMessage;
+  ApiResponse? response;
+
+  List notifications = [];
+
+  // Customer
+  Future<bool> loadListNotificationCustomer() async {
+    isLoadingList = true;
     errorMessage = null;
     notifyListeners();
 
     try {
-      final res = await _notificationService.getList();
-      notificationResponse = res;
-      
-      appLog('Notification Response: ${res.data}');
+      final res = await _notificationService.listNotification();
+      response = res;
 
       if (res.success == true) {
+        notifications = res.data;
+        // appLog("List: ${notifications}");
         return true;
       } else {
         errorMessage = res.message;
@@ -33,20 +39,22 @@ class NotificationProvider extends ChangeNotifier {
 
     } catch (e) {
       errorMessage = 'Đã xảy ra lỗi: $e';
+      appLog('Đã xảy ra lỗi: $e');
       return false;
     } finally {
-      isLoading = false;
+      isLoadingList = false;
       notifyListeners();
     }
   }
 
-  Future<bool> checkRead(Map<String, dynamic> body) async {
-    isLoading = true;
+  Future<bool> isReadNotification(int id) async {
+    isLoadingList = true;
     errorMessage = null;
     notifyListeners();
 
     try {
-      final res = await _notificationService.checkRead(body);
+      final res = await _notificationService.readNotification(id);
+      response = res;
 
       if (res.success == true) {
         return true;
@@ -54,11 +62,13 @@ class NotificationProvider extends ChangeNotifier {
         errorMessage = res.message;
         return false;
       }
+
     } catch (e) {
       errorMessage = 'Đã xảy ra lỗi: $e';
+      appLog('Đã xảy ra lỗi: $e');
       return false;
     } finally {
-      isLoading = false;
+      isLoadingList = false;
       notifyListeners();
     }
   }
