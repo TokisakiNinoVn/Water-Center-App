@@ -1,0 +1,20 @@
+meta {
+  name: Danh sách thông báo
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{domainUrl}}/notifications
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{tokenNhanVien}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
