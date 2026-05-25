@@ -1,9 +1,16 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:clean_water/data/configs/color_config.dart';
+import 'package:clean_water/data/services/account_service.dart';
+import 'package:clean_water/presentation/common/snackbar.dart';
+import 'package:clean_water/presentation/providers/customer/account_customer_provider.dart';
 import 'package:clean_water/presentation/routers/configs/app_router_config.dart';
+import 'package:clean_water/presentation/routers/configs/customer_router_config.dart';
 import 'package:clean_water/presentation/routers/configs/staff_router_config.dart';
+import 'package:clean_water/presentation/screen/widgets/custom_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../../core/storage/index_storage.dart';
@@ -18,7 +25,7 @@ class AccountCustomerTab extends StatefulWidget {
 class _AccountTabState extends State<AccountCustomerTab>
     with SingleTickerProviderStateMixin {
   Map<String, dynamic>? _user;
-
+  final AccountService _accountService = AccountService();
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
@@ -52,6 +59,126 @@ class _AccountTabState extends State<AccountCustomerTab>
     });
   }
 
+  Future<void> _showConfirmDeleteAccount() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => CustomDialog(
+        iconColor: ColorConfig.primary,
+        title: 'Xác nhận xóa tài khoản',
+        body:
+        'Các thông tin tài khoản của bạn sẽ được xóa. Bạn có chắc chắn xóa tài khoản này?',
+        cancelLabel: 'Đóng',
+        confirmLabel: 'Xác nhận',
+        confirmColor: ColorConfig.error,
+        onConfirm: () {
+          Navigator.of(dialogContext).pop(true);
+        },
+      ),
+    );
+
+    if (result == true && mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => Center(
+          child: CircularProgressIndicator(
+            color: ColorConfig.primary,
+          ),
+        ),
+      );
+
+      try {
+        final provider = context.read<AccountCustomerProvider>();
+        final success = await provider.deleteAccountProvider();
+
+        // Đóng loading
+        if (mounted) Navigator.of(context).pop();
+
+        if (success) {
+          SnackBarHelper.showSuccess(
+            context,
+            "Xóa tài khoản thành công!",
+          );
+          SharedPreferencesUtils.logOut();
+          context.go(AppRouterConfig.login);
+        } else {
+          SnackBarHelper.showError(
+            context,
+            provider.errorMessage ?? "Xóa tài khoản thất bại!",
+          );
+        }
+      } catch (e) {
+        // Đóng loading nếu lỗi
+        if (mounted) Navigator.of(context).pop();
+
+        SnackBarHelper.showError(
+          context,
+          "Lỗi xóa tài khoản: $e",
+        );
+      }
+    }
+  }
+
+  Future<void> _showConfirmLogout() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => CustomDialog(
+        iconColor: ColorConfig.primary,
+        title: 'Xác nhận đăng xuất',
+        body:
+        'Đăng xuất tài khoản khỏi thiết bị?',
+        cancelLabel: 'Đóng',
+        confirmLabel: 'Xác nhận',
+        confirmColor: ColorConfig.error,
+        onConfirm: () {
+          Navigator.of(dialogContext).pop(true);
+        },
+      ),
+    );
+
+    if (result == true && mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => Center(
+          child: CircularProgressIndicator(
+            color: ColorConfig.error,
+          ),
+        ),
+      );
+
+      try {
+        // Đóng loading
+        if (mounted) Navigator.of(context).pop();
+        if (result == true) {
+          //     final prefs = await SharedPreferences.getInstance();
+          //     await prefs.clear();
+          //     await prefs.setBool('isLogin', false);
+          //     if (context.mounted) context.go(AppRouterConfig.login);
+          //   }
+          SnackBarHelper.showSuccess(
+            context,
+            "Đăng xuất tài khoản thành công!",
+          );
+          SharedPreferencesUtils.logOut();
+          context.go(AppRouterConfig.login);
+        } else {
+          SnackBarHelper.showError(
+            context,
+            "Đăng xuất thất bại!",
+          );
+        }
+      } catch (e) {
+        // Đóng loading nếu lỗi
+        if (mounted) Navigator.of(context).pop();
+        SnackBarHelper.showError(
+          context,
+          "Lỗi đăng xuất: $e",
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _animController.dispose();
@@ -68,117 +195,119 @@ class _AccountTabState extends State<AccountCustomerTab>
   String get _avatarLetter =>
       _displayName.isNotEmpty ? _displayName.split(' ').last[0].toUpperCase() : 'U';
 
-  Future<void> _handleLogout() async {
-    final shouldLogout = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        backgroundColor: Colors.white,
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFEEEA),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(Icons.logout_rounded,
-                    color: Color(0xFFFF4B4B), size: 28),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Đăng xuất?',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF1A1A2E),
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF999999),
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => Navigator.of(context).pop(false),
-                      child: Container(
-                        height: 46,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF0F4FF),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'Hủy',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF4F8EF7),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => Navigator.of(context).pop(true),
-                      child: Container(
-                        height: 46,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF4B4B),
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFFFF4B4B).withOpacity(0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'Đăng xuất',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
 
-    if (shouldLogout == true) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.clear();
-      await prefs.setBool('isLogin', false);
-      if (context.mounted) context.go(AppRouterConfig.login);
-    }
-  }
+
+  // Future<void> _handleLogout() async {
+  //   final shouldLogout = await showDialog<bool>(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (context) => Dialog(
+  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+  //       backgroundColor: Colors.white,
+  //       child: Padding(
+  //         padding: const EdgeInsets.all(24),
+  //         child: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             Container(
+  //               width: 56,
+  //               height: 56,
+  //               decoration: BoxDecoration(
+  //                 color: const Color(0xFFFFEEEA),
+  //                 borderRadius: BorderRadius.circular(16),
+  //               ),
+  //               child: const Icon(Icons.logout_rounded,
+  //                   color: Color(0xFFFF4B4B), size: 28),
+  //             ),
+  //             const SizedBox(height: 16),
+  //             const Text(
+  //               'Đăng xuất?',
+  //               style: TextStyle(
+  //                 fontSize: 18,
+  //                 fontWeight: FontWeight.w800,
+  //                 color: Color(0xFF1A1A2E),
+  //               ),
+  //             ),
+  //             const SizedBox(height: 8),
+  //             const Text(
+  //               'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?',
+  //               textAlign: TextAlign.center,
+  //               style: TextStyle(
+  //                 fontSize: 13,
+  //                 color: Color(0xFF999999),
+  //                 height: 1.5,
+  //               ),
+  //             ),
+  //             const SizedBox(height: 24),
+  //             Row(
+  //               children: [
+  //                 Expanded(
+  //                   child: GestureDetector(
+  //                     onTap: () => Navigator.of(context).pop(false),
+  //                     child: Container(
+  //                       height: 46,
+  //                       decoration: BoxDecoration(
+  //                         color: const Color(0xFFF0F4FF),
+  //                         borderRadius: BorderRadius.circular(12),
+  //                       ),
+  //                       child: const Center(
+  //                         child: Text(
+  //                           'Hủy',
+  //                           style: TextStyle(
+  //                             fontWeight: FontWeight.w600,
+  //                             color: Color(0xFF4F8EF7),
+  //                             fontSize: 14,
+  //                           ),
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ),
+  //                 const SizedBox(width: 12),
+  //                 Expanded(
+  //                   child: GestureDetector(
+  //                     onTap: () => Navigator.of(context).pop(true),
+  //                     child: Container(
+  //                       height: 46,
+  //                       decoration: BoxDecoration(
+  //                         color: const Color(0xFFFF4B4B),
+  //                         borderRadius: BorderRadius.circular(12),
+  //                         boxShadow: [
+  //                           BoxShadow(
+  //                             color: const Color(0xFFFF4B4B).withOpacity(0.3),
+  //                             blurRadius: 10,
+  //                             offset: const Offset(0, 4),
+  //                           ),
+  //                         ],
+  //                       ),
+  //                       child: const Center(
+  //                         child: Text(
+  //                           'Đăng xuất',
+  //                           style: TextStyle(
+  //                             fontWeight: FontWeight.w700,
+  //                             color: Colors.white,
+  //                             fontSize: 14,
+  //                           ),
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  //
+  //   if (shouldLogout == true) {
+  //     final prefs = await SharedPreferences.getInstance();
+  //     await prefs.clear();
+  //     await prefs.setBool('isLogin', false);
+  //     if (context.mounted) context.go(AppRouterConfig.login);
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -224,7 +353,7 @@ class _AccountTabState extends State<AccountCustomerTab>
                       color: const Color(0xFF4F8EF7),
                       label: 'Chỉnh sửa thông tin cá nhân',
                       onTap: () {
-                        context.push(StaffRouterConfig.updateProfile);
+                        context.push(CustomerRouterConfig.updateAccount);
                       },
                     ),
                     _MenuItem(
@@ -235,15 +364,15 @@ class _AccountTabState extends State<AccountCustomerTab>
                         // context.push(AppRouterConfig.changePassword);
                       },
                     ),
-                    _MenuItem(
-                      icon: Icons.notifications_none_rounded,
-                      color: const Color(0xFFFFBB00),
-                      label: 'Thông báo',
-                      // trailing: _Badge(label: '3'),
-                      onTap: () {
-                        // context.push(AppRouterConfig.notification);
-                      },
-                    ),
+                    // _MenuItem(
+                    //   icon: Icons.notifications_none_rounded,
+                    //   color: const Color(0xFFFFBB00),
+                    //   label: 'Thông báo',
+                    //   // trailing: _Badge(label: '3'),
+                    //   onTap: () {
+                    //     // context.push(AppRouterConfig.notification);
+                    //   },
+                    // ),
                   ]),
                 ),
 
@@ -304,7 +433,8 @@ class _AccountTabState extends State<AccountCustomerTab>
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
                     child: GestureDetector(
-                      onTap: _handleLogout,
+                      // onTap: _handleLogout,
+                      onTap: _showConfirmLogout,
                       child: Container(
                         width: double.infinity,
                         height: 52,
@@ -340,7 +470,7 @@ class _AccountTabState extends State<AccountCustomerTab>
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
                     child: GestureDetector(
-                      onTap: _handleLogout,
+                      onTap: _showConfirmDeleteAccount,
                       child: Container(
                         width: double.infinity,
                         height: 52,

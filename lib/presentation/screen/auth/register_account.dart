@@ -1,47 +1,53 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:clean_water/presentation/common/snackbar.dart';
+import 'package:clean_water/presentation/providers/auth/auth_provider.dart';
 import 'package:clean_water/presentation/providers/staff/account_provider.dart';
+import 'package:clean_water/presentation/routers/configs/customer_router_config.dart';
 import 'package:clean_water/presentation/utils/index_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/storage/index_storage.dart';
-
-class UpdateProfileCustomer extends StatefulWidget {
-  const UpdateProfileCustomer({super.key});
+class RegisterAccount extends StatefulWidget {
+  const RegisterAccount({super.key});
 
   @override
-  State<UpdateProfileCustomer> createState() => _UpdateProfileCustomerState();
+  State<RegisterAccount> createState() => _RegisterAccountState();
 }
 
-class _UpdateProfileCustomerState extends State<UpdateProfileCustomer>
+class _RegisterAccountState extends State<RegisterAccount>
     with SingleTickerProviderStateMixin {
-  // Form key
-  final _infoFormKey = GlobalKey<FormState>();
+  // Form keys
+  final _basicInfoFormKey = GlobalKey<FormState>();
+  final _passwordFormKey = GlobalKey<FormState>();
 
   // Controllers
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _addressController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
 
-  String _selectedGender = "female";
-  String? _avatarUrl;
-  File? _localAvatar;
+  String _selectedGender = "male";
+  DateTime? _selectedDateOfBirth;
 
-  // Loading state
-  bool _isUpdatingInfo = false;
-  bool _dataLoaded = false;
+  // Focus nodes
+  final FocusNode _nameFocus = FocusNode();
+  final FocusNode _phoneFocus = FocusNode();
+  final FocusNode _emailFocus = FocusNode();
+  final FocusNode _addressFocus = FocusNode();
+  final FocusNode _passwordFocus = FocusNode();
+  final FocusNode _confirmPasswordFocus = FocusNode();
+
+  // State variables
+  bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
-
-  // User data
-  Map<String, dynamic>? _userData;
 
   @override
   void initState() {
@@ -56,123 +62,77 @@ class _UpdateProfileCustomerState extends State<UpdateProfileCustomer>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadUserData());
-  }
-
-  Future<void> _loadUserData() async {
-    final provider = context.read<AccountProvider>();
-    final success = await provider.loadInformationAccount(isCustomer: true);
-
-    if (success && mounted) {
-      final userMap = provider.accountResponse?.data?['user'] as Map<String, dynamic>?;
-      if (userMap != null) {
-        setState(() {
-          _userData = userMap;
-          _nameController.text = userMap['ten_khach_hang'] ?? '';
-          _phoneController.text = userMap['so_dien_thoai'] ?? '';
-          _emailController.text = userMap['email'] ?? '';
-          _addressController.text = userMap['dia_chi'] ?? ''; // sửa key
-          _selectedGender = userMap['gioi_tinh'] ?? "female";
-          _avatarUrl = userMap['avatar'];
-          _dataLoaded = true;
-        });
-      } else {
-        SnackBarHelper.showError(context, 'Không thể tải thông tin người dùng');
-        setState(() => _dataLoaded = true);
-      }
-    } else if (mounted) {
-      SnackBarHelper.showError(context, 'Không thể tải thông tin');
-      setState(() => _dataLoaded = true);
-    }
-
     _animController.forward();
   }
 
-  Future<void> _pickAvatar() async {
-    try {
-      final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(
-        source: ImageSource.gallery,
-      );
+  // Register new customer account
+  Future<void> _registerAccount() async {
+    // Validate basic info
+    if (!_basicInfoFormKey.currentState!.validate()) return;
+    if (!_passwordFormKey.currentState!.validate()) return;
 
-      if (pickedFile == null) {
-        appLog("Không thể chọn ảnh avatar: ");
-        return;
-      } else {
-        appLog("Chọn ảnh avatar: $pickedFile");
-        _localAvatar = File(pickedFile.path);
-        setState(() {});
+    setState(() => _isLoading = true);
+    final provider = context.read<AuthProvider>();
+
+    try {
+      final registrationData = {
+        'name': _nameController.text.trim(),
+        'phone': _phoneController.text.trim(),
+        'email': _emailController.text.trim(),
+        'password': _passwordController.text.trim(),
+        'password_confirmation': _confirmPasswordController.text.trim(),
+        'gender': _selectedGender,
+        'address': _addressController.text.trim(),
+        'date_of_birth': _selectedDateOfBirth?.toIso8601String().split('T').first ?? '',
+      };
+
+      final success = await provider.registerAccountProvider(registrationData);
+
+      if (success && mounted) {
+        SnackBarHelper.showSuccess(context, 'Đăng ký tài khoản thành công!');
+
+
+        if (mounted) {
+          context.go(CustomerRouterConfig.homeCustomer);
+        }
+      } else if (mounted) {
+        SnackBarHelper.showError(context, provider.errorMessage ?? 'Đăng ký thất bại');
       }
     } catch (e) {
-      appLog("Error pick avatar: $e");
+      appLog("Error registering account: $e");
       if (mounted) {
-        SnackBarHelper.showError(context, 'Lỗi pick ảnh avatar');
+        SnackBarHelper.showError(context, 'Đăng ký thất bại: ${e.toString()}');
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  // Cập nhật thông tin cá nhân
-  Future<void> _updateInfo() async {
-    if (!_infoFormKey.currentState!.validate()) return;
+  // Pick date of birth
+  Future<void> _pickDateOfBirth() async {
+    final DateTime now = DateTime.now();
+    final DateTime maxDate = DateTime(now.year - 10, now.month, now.day);
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDateOfBirth ?? maxDate,
+      firstDate: DateTime(1900),
+      lastDate: maxDate,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF1565C0),
+              onPrimary: Colors.white,
+              onSurface: Color(0xFF212121),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
 
-    setState(() => _isUpdatingInfo = true);
-    final provider = context.read<AccountProvider>();
-
-    try {
-      // Sử dụng đúng key theo backend
-      final updatedInfo = {
-        'ten_khach_hang': _nameController.text.trim(),
-        'so_dien_thoai': _phoneController.text.trim(),
-        'email': _emailController.text.trim(),
-        'gioi_tinh': _selectedGender,
-        'dia_chi': _addressController.text.trim(),
-      };
-
-      bool success;
-      if (_localAvatar != null) {
-        appLog("Có cập nhật avatar: $_localAvatar");
-        success = await provider.update(updatedInfo, avatar: _localAvatar, isCustomer: true);
-      } else {
-        appLog("Không cập nhật avatar");
-        success = await provider.update(updatedInfo, isCustomer: true);
-      }
-
-      if (success) {
-        // Cập nhật local storage
-        final userForStorage = Map<String, dynamic>.from(_userData ?? {});
-        userForStorage.addAll(updatedInfo);
-        final String jsonString = json.encode(userForStorage);
-        await SharedPrefsService.saveValue(PrefType.string, 'user', jsonString);
-
-        setState(() {
-          _userData = userForStorage;
-          _avatarUrl = null; // sẽ load lại sau
-        });
-
-        if (mounted) {
-          SnackBarHelper.showSuccess(context, 'Cập nhật thông tin thành công!');
-          // Reload lại để lấy avatar URL mới từ server
-          await provider.loadInformationAccount(isCustomer: true);
-          final newUserMap = provider.accountResponse?.data?['user'] as Map<String, dynamic>?;
-          if (newUserMap != null && mounted) {
-            setState(() {
-              _avatarUrl = newUserMap['avatar'];
-              _localAvatar = null;
-            });
-          }
-        }
-      } else {
-        if (mounted) {
-          SnackBarHelper.showError(context, "Cập nhật thông tin thất bại");
-        }
-      }
-    } catch (e) {
-      appLog("Error updating info: $e");
-      if (mounted) {
-        SnackBarHelper.showError(context, 'Cập nhật thất bại: ${e.toString()}');
-      }
-    } finally {
-      if (mounted) setState(() => _isUpdatingInfo = false);
+    if (picked != null && picked != _selectedDateOfBirth) {
+      setState(() => _selectedDateOfBirth = picked);
     }
   }
 
@@ -182,8 +142,81 @@ class _UpdateProfileCustomerState extends State<UpdateProfileCustomer>
     _phoneController.dispose();
     _emailController.dispose();
     _addressController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+
+    _nameFocus.dispose();
+    _phoneFocus.dispose();
+    _emailFocus.dispose();
+    _addressFocus.dispose();
+    _passwordFocus.dispose();
+    _confirmPasswordFocus.dispose();
+
     _animController.dispose();
     super.dispose();
+  }
+
+  // Validators
+  String? _validateName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Vui lòng nhập họ và tên';
+    }
+    if (value.trim().length < 2) {
+      return 'Họ tên phải có ít nhất 2 ký tự';
+    }
+    return null;
+  }
+
+  String? _validatePhone(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Vui lòng nhập số điện thoại';
+    }
+    final phoneRegex = RegExp(r'^(0[3|5|7|8|9])+([0-9]{8})$');
+    if (!phoneRegex.hasMatch(value.trim())) {
+      return 'Số điện thoại không hợp lệ';
+    }
+    return null;
+  }
+
+  String? _validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Vui lòng nhập email';
+    }
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(value.trim())) {
+      return 'Email không hợp lệ';
+    }
+    return null;
+  }
+
+  String? _validateAddress(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Vui lòng nhập địa chỉ';
+    }
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Vui lòng nhập mật khẩu';
+    }
+    if (value.length < 8) {
+      return 'Mật khẩu phải có ít nhất 8 ký tự';
+    }
+    if (!RegExp(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]').hasMatch(value)) {
+      return 'Mật khẩu phải bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt';
+    }
+    return null;
+  }
+
+  String? _validateConfirmPassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Vui lòng xác nhận mật khẩu';
+    }
+    if (value != _passwordController.text) {
+      return 'Mật khẩu xác nhận không khớp';
+    }
+    return null;
   }
 
   // ─── UI ────────────────────────────────────────────────────────────────────
@@ -197,17 +230,12 @@ class _UpdateProfileCustomerState extends State<UpdateProfileCustomer>
         slivers: [
           _buildSliverAppBar(),
           SliverToBoxAdapter(
-            child: _dataLoaded
-                ? FadeTransition(
+            child: FadeTransition(
               opacity: _fadeAnim,
               child: SlideTransition(
                 position: _slideAnim,
                 child: _buildBody(),
               ),
-            )
-                : const SizedBox(
-              height: 300,
-              child: Center(child: CircularProgressIndicator()),
             ),
           ),
         ],
@@ -217,7 +245,7 @@ class _UpdateProfileCustomerState extends State<UpdateProfileCustomer>
 
   Widget _buildSliverAppBar() {
     return SliverAppBar(
-      expandedHeight: 220,
+      expandedHeight: 200,
       pinned: true,
       stretch: true,
       backgroundColor: const Color(0xFF1565C0),
@@ -227,134 +255,42 @@ class _UpdateProfileCustomerState extends State<UpdateProfileCustomer>
       ),
       flexibleSpace: FlexibleSpaceBar(
         stretchModes: const [StretchMode.zoomBackground],
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF1976D2), Color(0xFF0D47A1)],
-                ),
-              ),
-            ),
-            Positioned(
-              top: -40,
-              right: -40,
-              child: Container(
-                width: 160,
-                height: 160,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.07),
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 30,
-              left: -30,
-              child: Container(
-                width: 110,
-                height: 110,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.05),
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Column(
-                children: [
-                  _buildAvatarPicker(),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Cập nhật thông tin khách hàng',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ),
-            ),
-          ],
+        title: const Text(
+          'Đăng ký tài khoản',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
+          ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildAvatarPicker() {
-    return GestureDetector(
-      onTap: _isUpdatingInfo ? null : _pickAvatar,
-      child: Stack(
-        alignment: Alignment.bottomRight,
-        children: [
-          Container(
-            width: 88,
-            height: 88,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 3),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+        centerTitle: true,
+        background: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF1976D2), Color(0xFF0D47A1)],
+            ),
+          ),
+          child: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.person_add_rounded, size: 64, color: Colors.white70),
+                SizedBox(height: 12),
+                Text(
+                  'Tạo tài khoản mới',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
-            child: ClipOval(
-              child: _buildAvatarContent(),
-            ),
           ),
-          if (!_isUpdatingInfo)
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFC107),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
-              ),
-              child: const Icon(Icons.camera_alt_rounded,
-                  size: 14, color: Colors.white),
-            ),
-        ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildAvatarContent() {
-    if (_localAvatar != null) {
-      return Image.file(_localAvatar!, fit: BoxFit.cover);
-    }
-    if (_avatarUrl != null && _avatarUrl!.isNotEmpty) {
-      return Image.network(
-        _avatarUrl!,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return const Center(
-            child: CircularProgressIndicator(strokeWidth: 2),
-          );
-        },
-        errorBuilder: (_, __, ___) => _avatarPlaceholder(),
-      );
-    }
-    return _avatarPlaceholder();
-  }
-
-  Widget _avatarPlaceholder() {
-    return Container(
-      color: const Color(0xFF90CAF9),
-      child: const Icon(Icons.person_rounded, size: 44, color: Colors.white),
     );
   }
 
@@ -364,52 +300,125 @@ class _UpdateProfileCustomerState extends State<UpdateProfileCustomer>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Thông tin cá nhân
           _sectionLabel('Thông tin cá nhân'),
           const SizedBox(height: 12),
           Form(
-            key: _infoFormKey,
+            key: _basicInfoFormKey,
             child: _buildCard([
               _buildField(
                 controller: _nameController,
                 label: 'Họ và tên',
                 icon: Icons.badge_outlined,
-                validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'Vui lòng nhập họ tên' : null,
-              ),
-              _divider(),
-              _buildField(
-                controller: _emailController,
-                label: 'Email',
-                icon: Icons.email,
-                validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'Vui lòng nhập email' : null,
+                focusNode: _nameFocus,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) => _phoneFocus.requestFocus(),
+                validator: _validateName,
               ),
               _divider(),
               _buildField(
                 controller: _phoneController,
                 label: 'Số điện thoại',
                 icon: Icons.phone_outlined,
+                focusNode: _phoneFocus,
+                textInputAction: TextInputAction.next,
+                keyboardType: TextInputType.phone,
+                onFieldSubmitted: (_) => _emailFocus.requestFocus(),
+                validator: _validatePhone,
+              ),
+              _divider(),
+              _buildField(
+                controller: _emailController,
+                label: 'Email',
+                icon: Icons.email_outlined,
+                focusNode: _emailFocus,
+                textInputAction: TextInputAction.next,
+                keyboardType: TextInputType.emailAddress,
+                onFieldSubmitted: (_) => _addressFocus.requestFocus(),
+                validator: _validateEmail,
               ),
               _divider(),
               _buildField(
                 controller: _addressController,
                 label: 'Địa chỉ',
                 icon: Icons.location_on_outlined,
-                validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'Vui lòng nhập địa chỉ' : null,
+                focusNode: _addressFocus,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) => _passwordFocus.requestFocus(),
+                validator: _validateAddress,
               ),
             ]),
           ),
+          const SizedBox(height: 20),
+          _sectionLabel('Ngày sinh'),
+          const SizedBox(height: 12),
+          _buildDateOfBirthPicker(),
           const SizedBox(height: 20),
           _sectionLabel('Giới tính'),
           const SizedBox(height: 12),
           _buildGenderSelector(),
           const SizedBox(height: 20),
-          // Nút lưu thông tin
-          _buildSaveInfoButton(),
+          _sectionLabel('Bảo mật'),
+          const SizedBox(height: 12),
+          Form(
+            key: _passwordFormKey,
+            child: _buildCard([
+              _buildPasswordField(
+                controller: _passwordController,
+                label: 'Mật khẩu',
+                focusNode: _passwordFocus,
+                obscureText: _obscurePassword,
+                onToggleVisibility: () => setState(() => _obscurePassword = !_obscurePassword),
+                validator: _validatePassword,
+              ),
+              _divider(),
+              _buildPasswordField(
+                controller: _confirmPasswordController,
+                label: 'Xác nhận mật khẩu',
+                focusNode: _confirmPasswordFocus,
+                obscureText: _obscureConfirmPassword,
+                onToggleVisibility: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                validator: _validateConfirmPassword,
+              ),
+            ]),
+          ),
+          const SizedBox(height: 24),
+          _buildRegisterButton(),
           const SizedBox(height: 24),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDateOfBirthPicker() {
+    return GestureDetector(
+      onTap: _isLoading ? null : _pickDateOfBirth,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE0E0E0)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.cake_outlined, color: Color(0xFF1565C0), size: 22),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _selectedDateOfBirth != null
+                    ? '${_selectedDateOfBirth!.day}/${_selectedDateOfBirth!.month}/${_selectedDateOfBirth!.year}'
+                    : 'Chọn ngày sinh',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: _selectedDateOfBirth != null
+                      ? const Color(0xFF212121)
+                      : const Color(0xFF9E9E9E),
+                ),
+              ),
+            ),
+            const Icon(Icons.arrow_drop_down, color: Color(0xFF9E9E9E)),
+          ],
+        ),
       ),
     );
   }
@@ -452,18 +461,56 @@ class _UpdateProfileCustomerState extends State<UpdateProfileCustomer>
     required TextEditingController controller,
     required String label,
     required IconData icon,
+    required FocusNode focusNode,
     TextInputType keyboardType = TextInputType.text,
+    TextInputAction textInputAction = TextInputAction.next,
+    void Function(String)? onFieldSubmitted,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
+      focusNode: focusNode,
       keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      onFieldSubmitted: onFieldSubmitted,
       validator: validator,
       style: const TextStyle(fontSize: 15, color: Color(0xFF212121)),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(fontSize: 14, color: Color(0xFF9E9E9E)),
         prefixIcon: Icon(icon, size: 20, color: const Color(0xFF1565C0)),
+        border: InputBorder.none,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        errorStyle: const TextStyle(fontSize: 12),
+      ),
+    );
+  }
+
+  Widget _buildPasswordField({
+    required TextEditingController controller,
+    required String label,
+    required FocusNode focusNode,
+    required bool obscureText,
+    required VoidCallback onToggleVisibility,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      focusNode: focusNode,
+      obscureText: obscureText,
+      validator: validator,
+      style: const TextStyle(fontSize: 15, color: Color(0xFF212121)),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(fontSize: 14, color: Color(0xFF9E9E9E)),
+        prefixIcon: const Icon(Icons.lock_outline, size: 20, color: Color(0xFF1565C0)),
+        suffixIcon: IconButton(
+          icon: Icon(
+            obscureText ? Icons.visibility_off : Icons.visibility,
+            color: const Color(0xFF9E9E9E),
+          ),
+          onPressed: onToggleVisibility,
+        ),
         border: InputBorder.none,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         errorStyle: const TextStyle(fontSize: 12),
@@ -488,7 +535,7 @@ class _UpdateProfileCustomerState extends State<UpdateProfileCustomer>
   }) {
     final isSelected = _selectedGender == value;
     return GestureDetector(
-      onTap: _isUpdatingInfo ? null : () => setState(() => _selectedGender = value),
+      onTap: _isLoading ? null : () => setState(() => _selectedGender = value),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -537,12 +584,12 @@ class _UpdateProfileCustomerState extends State<UpdateProfileCustomer>
     );
   }
 
-  Widget _buildSaveInfoButton() {
+  Widget _buildRegisterButton() {
     return SizedBox(
       width: double.infinity,
       height: 52,
       child: ElevatedButton(
-        onPressed: _isUpdatingInfo ? null : _updateInfo,
+        onPressed: _isLoading ? null : _registerAccount,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF1565C0),
           foregroundColor: Colors.white,
@@ -552,7 +599,7 @@ class _UpdateProfileCustomerState extends State<UpdateProfileCustomer>
             borderRadius: BorderRadius.circular(14),
           ),
         ),
-        child: _isUpdatingInfo
+        child: _isLoading
             ? const SizedBox(
           width: 22,
           height: 22,
@@ -564,10 +611,10 @@ class _UpdateProfileCustomerState extends State<UpdateProfileCustomer>
             : const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.save_rounded, size: 20),
+            Icon(Icons.person_add_rounded, size: 20),
             SizedBox(width: 8),
             Text(
-              'Lưu thông tin',
+              'Đăng ký',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

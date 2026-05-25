@@ -5,24 +5,36 @@ import 'package:clean_water/presentation/routers/configs/staff_router_config.dar
 import 'package:clean_water/presentation/utils/index_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-class ListWaterMeterCustomer extends StatefulWidget {
-  const ListWaterMeterCustomer({super.key});
+class ListInvoices extends StatefulWidget {
+  final int id;
+
+  const ListInvoices({
+    super.key,
+    required this.id,
+  });
 
   @override
-  State<ListWaterMeterCustomer> createState() => _WaterReadingState();
+  State<ListInvoices> createState() => _ListInvoicesState();
 }
 
-class _WaterReadingState extends State<ListWaterMeterCustomer> {
+class _ListInvoicesState extends State<ListInvoices> {
   final TextEditingController _searchController = TextEditingController();
+
   bool _isLoading = true;
+
   List<dynamic> _allItems = [];
   List<dynamic> _filteredItems = [];
+
+  final NumberFormat _currencyFormat =
+  NumberFormat.currency(locale: 'vi_VN', symbol: '₫');
 
   @override
   void initState() {
     super.initState();
+
     _searchController.addListener(_onSearchChanged);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -39,64 +51,130 @@ class _WaterReadingState extends State<ListWaterMeterCustomer> {
 
   void _onSearchChanged() {
     final query = _searchController.text.toLowerCase().trim();
+
     setState(() {
       if (query.isEmpty) {
         _filteredItems = List.from(_allItems);
       } else {
         _filteredItems = _allItems.where((item) {
-          final maDongHo = (item['ma_dong_ho'] ?? '').toString().toLowerCase();
-          final tenKhachHang = (item['khach_hang']?['ten_khach_hang'] ?? '')
-              .toString()
-              .toLowerCase();
-          final seri = (item['seri'] ?? '').toString().toLowerCase();
-          return maDongHo.contains(query) ||
-              tenKhachHang.contains(query) ||
-              seri.contains(query);
+          final maHoaDon =
+          (item['ma_hoa_don'] ?? '').toString().toLowerCase();
+
+          final maDongHo =
+          (item['ma_dong_ho'] ?? '').toString().toLowerCase();
+
+          final ky = (item['ky'] ?? '').toString().toLowerCase();
+
+          return maHoaDon.contains(query) ||
+              maDongHo.contains(query) ||
+              ky.contains(query);
         }).toList();
       }
     });
   }
 
+  // void _onSearchChanged() {
+  //   final query = _searchController.text.toLowerCase().trim();
+  //
+  //   setState(() {
+  //     if (query.isEmpty) {
+  //       _filteredItems = List.from(_allItems);
+  //     } else {
+  //       _filteredItems = _allItems.where((itemRaw) {
+  //         final invoices = itemRaw['hoa_dons'] as List<dynamic>;
+  //
+  //         if (invoices.isEmpty) return false;
+  //
+  //         final item = invoices.first as Map<String, dynamic>;
+  //
+  //         final maHoaDon =
+  //         (item['ma_hoa_don'] ?? '')
+  //             .toString()
+  //             .toLowerCase();
+  //
+  //         final maDongHo =
+  //         (item['ma_dong_ho'] ?? '')
+  //             .toString()
+  //             .toLowerCase();
+  //
+  //         final ky =
+  //         (item['ky'] ?? '')
+  //             .toString()
+  //             .toLowerCase();
+  //
+  //         return maHoaDon.contains(query) ||
+  //             maDongHo.contains(query) ||
+  //             ky.contains(query);
+  //       }).toList();
+  //     }
+  //   });
+  // }
+
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
+
     final provider = context.read<WaterIndexCustomerProvider>();
-    final success = await provider.loadListCustomer();
+
+    final success = await provider.loadInvoice(widget.id);
 
     if (success && mounted) {
-      final items = provider.waterIndex;
+      final items = provider.invoices;
+
       setState(() {
         _allItems = items ?? [];
         _filteredItems = List.from(_allItems);
+
         _isLoading = false;
       });
     } else if (mounted) {
       setState(() => _isLoading = false);
+
+      SnackBarHelper.showError(
+        context,
+        'Không thể tải danh sách hóa đơn',
+      );
     }
   }
 
-  String _trangThaiLabel(String? trangThai) {
-    switch (trangThai) {
-      case 'hoat_dong':
-        return 'Hoạt động';
-      case 'tam_dung':
-        return 'Tạm dừng';
-      case 'ngung_hoat_dong':
-        return 'Ngừng hoạt động';
-      default:
-        return trangThai ?? '';
+  String _formatMoney(dynamic value) {
+    final amount = double.tryParse(value.toString()) ?? 0;
+    return _currencyFormat.format(amount);
+  }
+
+  String _formatDate(String? date) {
+    if (date == null || date.isEmpty) return '--';
+
+    try {
+      final parsed = DateTime.parse(date);
+      return DateFormat('dd/MM/yyyy').format(parsed);
+    } catch (_) {
+      return '--';
     }
   }
 
-  Color _trangThaiColor(String? trangThai) {
-    switch (trangThai) {
-      case 'hoat_dong':
-        return const Color(0xFF22C55E);
-      case 'tam_dung':
-        return const Color(0xFFF59E0B);
-      case 'ngung_hoat_dong':
-        return const Color(0xFFEF4444);
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'da_thanh_toan':
+        return Colors.green;
+
+      case 'chua_thanh_toan':
+        return Colors.orange;
+
       default:
         return Colors.grey;
+    }
+  }
+
+  String _getStatusText(String status) {
+    switch (status) {
+      case 'da_thanh_toan':
+        return 'Đã thanh toán';
+
+      case 'chua_thanh_toan':
+        return 'Chưa thanh toán';
+
+      default:
+        return 'Không xác định';
     }
   }
 
@@ -128,9 +206,16 @@ class _WaterReadingState extends State<ListWaterMeterCustomer> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text(
-              'Danh sách các đồng hồ nước',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            Expanded(
+              child: Text(
+                'Danh sách hóa đơn',
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
             ),
           ],
         ),
@@ -143,14 +228,23 @@ class _WaterReadingState extends State<ListWaterMeterCustomer> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Tìm theo mã đồng hồ hoặc số công tơ',
-                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-                prefixIcon:
-                Icon(Icons.search, color: Colors.grey.shade400, size: 20),
+                hintText: 'Tìm theo mã hóa đơn, kỳ hoặc mã đồng hồ',
+                hintStyle: TextStyle(
+                  color: Colors.grey.shade400,
+                  fontSize: 14,
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: Colors.grey.shade400,
+                  size: 20,
+                ),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                  icon: Icon(Icons.clear,
-                      size: 18, color: Colors.grey.shade400),
+                  icon: Icon(
+                    Icons.clear,
+                    size: 18,
+                    color: Colors.grey.shade400,
+                  ),
                   onPressed: () {
                     _searchController.clear();
                     setState(() {});
@@ -163,8 +257,10 @@ class _WaterReadingState extends State<ListWaterMeterCustomer> {
                 ),
                 filled: true,
                 fillColor: Colors.grey.shade100,
-                contentPadding:
-                const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 16,
+                ),
               ),
             ),
           ),
@@ -176,7 +272,7 @@ class _WaterReadingState extends State<ListWaterMeterCustomer> {
               child: Row(
                 children: [
                   Text(
-                    'Tổng: ${_filteredItems.length} đồng hồ',
+                    'Tổng: ${_filteredItems.length} hóa đơn',
                     style: TextStyle(
                       fontSize: 13,
                       color: Colors.grey.shade600,
@@ -189,18 +285,25 @@ class _WaterReadingState extends State<ListWaterMeterCustomer> {
           const SizedBox(height: 4),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(
+              child: CircularProgressIndicator(),
+            )
                 : _filteredItems.isEmpty
                 ? Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.search_off,
-                      size: 48, color: Colors.grey.shade300),
+                  Icon(
+                    Icons.receipt_long_outlined,
+                    size: 48,
+                    color: Colors.grey.shade300,
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     'Không có dữ liệu phù hợp',
-                    style: TextStyle(color: Colors.grey.shade400),
+                    style: TextStyle(
+                      color: Colors.grey.shade400,
+                    ),
                   ),
                 ],
               ),
@@ -208,28 +311,29 @@ class _WaterReadingState extends State<ListWaterMeterCustomer> {
                 : RefreshIndicator(
               onRefresh: _loadData,
               child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                padding:
+                const EdgeInsets.fromLTRB(16, 4, 16, 24),
                 itemCount: _filteredItems.length,
                 separatorBuilder: (_, __) =>
                 const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   final item = _filteredItems[index];
-                  final khachHang = item['khach_hang'];
-                  final trangThai =
-                  item['trang_thai']?.toString();
+                  final status = item['trang_thai'] ?? '';
 
                   return InkWell(
                     onTap: () {
-                      context.push(StaffRouterConfig.createIndex, extra: item);
+                      context.push("${CustomerRouterConfig.detailsBill}/${item["id"]}");
                     },
                     borderRadius: BorderRadius.circular(14),
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius:
+                        BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color:
+                            Colors.black.withOpacity(0.05),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -237,200 +341,159 @@ class _WaterReadingState extends State<ListWaterMeterCustomer> {
                       ),
                       padding: const EdgeInsets.all(14),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment:
+                        CrossAxisAlignment.start,
                         children: [
-                          // Header row
                           Row(
                             children: [
-                              // Container(
-                              //   padding: const EdgeInsets.all(8),
-                              //   decoration: BoxDecoration(
-                              //     color: const Color(0xFF3B82F6)
-                              //         .withOpacity(0.1),
-                              //     borderRadius:
-                              //     BorderRadius.circular(10),
-                              //   ),
-                              //   child: const Icon(
-                              //     Icons.water_drop_outlined,
-                              //     size: 20,
-                              //     color: Color(0xFF3B82F6),
-                              //   ),
-                              // ),
-                              // const SizedBox(width: 10),
+                              Container(
+                                padding:
+                                const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue
+                                      .withOpacity(0.1),
+                                  borderRadius:
+                                  BorderRadius.circular(
+                                      12),
+                                ),
+                                child: const Icon(
+                                  Icons.receipt_long_rounded,
+                                  color: Colors.blue,
+                                  size: 22,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                                  CrossAxisAlignment
+                                      .start,
                                   children: [
-                                    Row(
-                                      children: [
-                                        Text("Số công tơ: "),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          item['seri'] ?? '',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 15,
-                                            color: Color(0xFF1A1A1A),
-                                          ),
-                                        ),
-                                      ],
+                                    Text(
+                                      item['ma_hoa_don'] ?? '--',
+                                      style:
+                                      const TextStyle(
+                                        fontWeight:
+                                        FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
                                     ),
-                                    // Text(
-                                    //   item['seri'] ?? '',
-                                    //   style: const TextStyle(
-                                    //     fontWeight: FontWeight.bold,
-                                    //     fontSize: 15,
-                                    //     color: Color(0xFF1A1A1A),
-                                    //   ),
-                                    // ),
-                                    // const SizedBox(height: 2),
-                                    // Text(
-                                    //   khachHang?['ten_khach_hang'] ??
-                                    //       '',
-                                    //   style: TextStyle(
-                                    //     fontSize: 13,
-                                    //     color: Colors.grey.shade600,
-                                    //   ),
-                                    // ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Kỳ ${item['ky'] ?? '--'}',
+                                      style: TextStyle(
+                                        color: Colors
+                                            .grey.shade600,
+                                        fontSize: 13,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
-                              // Trạng thái badge
-                              // Container(
-                              //   padding: const EdgeInsets.symmetric(
-                              //       horizontal: 10, vertical: 4),
-                              //   decoration: BoxDecoration(
-                              //     color: _trangThaiColor(trangThai)
-                              //         .withOpacity(0.1),
-                              //     borderRadius:
-                              //     BorderRadius.circular(20),
-                              //   ),
-                              //   child: Text(
-                              //     _trangThaiLabel(trangThai),
-                              //     style: TextStyle(
-                              //       fontSize: 12,
-                              //       fontWeight: FontWeight.w600,
-                              //       color:
-                              //       _trangThaiColor(trangThai),
-                              //     ),
-                              //   ),
-                              // ),
+                              Container(
+                                padding:
+                                const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                  _getStatusColor(status)
+                                      .withOpacity(0.12),
+                                  borderRadius:
+                                  BorderRadius.circular(
+                                      30),
+                                ),
+                                child: Text(
+                                  _getStatusText(status),
+                                  style: TextStyle(
+                                    color:
+                                    _getStatusColor(status),
+                                    fontSize: 12,
+                                    fontWeight:
+                                    FontWeight.w600,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
-                          const SizedBox(height: 7),
-                          const Divider(height: 1),
-                          const SizedBox(height: 10),
-                          _infoRow(
-                            icon: Icons.qr_code_outlined,
-                            label: 'Mã đồng hồ',
-                            value: item['ma_dong_ho'] ?? '',
+                          const SizedBox(height: 16),
+                          Container(
+                            padding:
+                            const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color:
+                              const Color(0xFFF7F9FC),
+                              borderRadius:
+                              BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              children: [
+                                // _buildInfoRow(
+                                //   'Mã đồng hồ',
+                                //   item['ma_dong_ho']
+                                //       ?.toString() ??
+                                //       '--',
+                                // ),
+                                // const SizedBox(height: 10),
+                                _buildInfoRow(
+                                  'Chỉ số',
+                                  '${item['chi_so_dau']} → ${item['chi_so_cuoi']}',
+                                ),
+                                const SizedBox(height: 10),
+                                _buildInfoRow(
+                                  'Tiêu thụ',
+                                  '${item['luong_tieu_thu']} m³',
+                                ),
+                                const SizedBox(height: 10),
+                                _buildInfoRow(
+                                  'Ngày lập',
+                                  _formatDate(
+                                      item['ngay_lap']),
+                                ),
+                              ],
+                            ),
                           ),
-                          const SizedBox(height: 6),
-                          // Info rows
-                          // _infoRow(
-                          //   icon: Icons.person_outline,
-                          //   label: 'KH',
-                          //   value: "${khachHang?['ma_khach_hang']} - ${khachHang?['ten_khach_hang']}" ?? '',
-                          // ),
-                          const SizedBox(height: 6),
-                          _infoRow(
-                            icon: Icons.location_on_outlined,
-                            label: 'Chỉ số cuối',
-                            value: (item?['chi_so_cuoi'] ?? '').toString(),
-                          ),
-                          const SizedBox(height: 6),
-
-                          // const SizedBox(height: 6),
-                          // _infoRow(
-                          //   icon: Icons.calendar_today_outlined,
-                          //   label: 'Ngày lắp',
-                          //   value: FormatHelper.formatDateTime(item['ngay_lap_dat'] ?? ''),
-                          // ),
-                          // const SizedBox(height: 10),
-                          // Footer
+                          const SizedBox(height: 14),
                           Row(
                             children: [
                               Expanded(
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    // TODO: Điều hướng lịch sử tiền nước
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF10B981),
-                                    foregroundColor: Colors.white,
-                                    elevation: 0,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 12,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(40),
-                                    ),
-                                  ),
-                                  child: const Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.receipt_long_outlined,
-                                        size: 16,
+                                child: Column(
+                                  crossAxisAlignment:
+                                  CrossAxisAlignment
+                                      .start,
+                                  children: [
+                                    Text(
+                                      'Tổng thanh toán',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors
+                                            .grey.shade600,
                                       ),
-                                      SizedBox(width: 6),
-                                      Text(
-                                        'Các hóa đơn',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _formatMoney(
+                                          item['tong_tien']),
+                                      style:
+                                      const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight:
+                                        FontWeight.bold,
+                                        color:
+                                        Color(0xFF1976D2),
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
                               ),
-
-                              const SizedBox(width: 12),
-
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    context.push(
-                                      CustomerRouterConfig.historyIndex,
-                                      extra: item,
-                                    );
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF3B82F6),
-                                    foregroundColor: Colors.white,
-                                    elevation: 0,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 12,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(40),
-                                    ),
-                                  ),
-                                  child: const Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.water_drop_outlined,
-                                        size: 16,
-                                      ),
-                                      SizedBox(width: 6),
-                                      Text(
-                                        'LS số nước',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                              Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                size: 16,
+                                color: Colors.grey.shade400,
                               ),
                             ],
-                          )
+                          ),
                         ],
                       ),
                     ),
@@ -444,32 +507,23 @@ class _WaterReadingState extends State<ListWaterMeterCustomer> {
     );
   }
 
-  Widget _infoRow({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
+  Widget _buildInfoRow(String label, String value) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 15, color: Colors.grey.shade400),
-        const SizedBox(width: 6),
-        Text(
-          '$label: ',
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.black.withOpacity(.6),
-          ),
-        ),
         Expanded(
           child: Text(
-            value.isNotEmpty ? value : '—',
-            style: const TextStyle(
+            label,
+            style: TextStyle(
+              color: Colors.grey.shade600,
               fontSize: 13,
-              color: Color(0xFF1A1A1A),
-              fontWeight: FontWeight.w500,
             ),
-            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
           ),
         ),
       ],

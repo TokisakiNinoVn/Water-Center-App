@@ -114,7 +114,7 @@ class _SplashScreenState extends State<SplashScreen> {
       } else if (role.isStaff) {
         if (mounted) context.go(StaffRouterConfig.homeStaff);
       } else {
-        if (mounted) SnackBarHelper.showWaring(context, "Role: $role chưa có màn hình!");
+        if (mounted) SnackBarHelper.showWarning(context, "Role: $role chưa có màn hình!");
       }
       return;
     }

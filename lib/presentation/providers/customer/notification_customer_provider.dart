@@ -7,10 +7,11 @@ import 'package:clean_water/data/services/water_index_service.dart';
 import 'package:clean_water/presentation/utils/index_utils.dart';
 import 'package:flutter/material.dart';
 
-class NotificationProvider extends ChangeNotifier {
+class NotificationCustomerProvider extends ChangeNotifier {
   final NotificationService _notificationService = NotificationService();
 
   bool isLoadingList = false;
+  bool isLoading = false;
 
   String? errorMessage;
   ApiResponse? response;
@@ -24,12 +25,12 @@ class NotificationProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final res = await _notificationService.getList();
+      final res = await _notificationService.listNotification();
       response = res;
 
       if (res.success == true) {
         notifications = res.data;
-        appLog("List: ${notifications}");
+        // appLog("List: ${notifications}");
         return true;
       } else {
         errorMessage = res.message;
@@ -52,7 +53,7 @@ class NotificationProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final res = await _notificationService.checkRead(id);
+      final res = await _notificationService.readNotification(id);
       response = res;
 
       if (res.success == true) {

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:clean_water/core/apis/customer/account_customer_api.dart';
 import 'package:clean_water/core/apis/staff/account_api.dart';
 import 'package:clean_water/core/network/api_methods_private.dart';
 import 'package:clean_water/data/enums/http_method.dart';
@@ -9,23 +10,31 @@ import '../../core/storage/index_storage.dart';
 import '../configs/app_config.dart';
 
 class AccountService {
-  Future<ApiResponse> me() async {
+  Future<ApiResponse> me({bool isCustomer = false}) async {
     return await ApiMethodsPrivate.request(
       HttpMethod.get,
-      AccountApi.me,
+      isCustomer? AccountCustomerApi.informationAccountCustomer : AccountApi.me,
     );
+
+  }
+  Future<ApiResponse> deleteAccount() async {
+    return await ApiMethodsPrivate.request(
+      HttpMethod.delete,
+      AccountCustomerApi.deleteAccountApi,
+    );
+
   }
 
-  Future<ApiResponse> update(Map<String, dynamic> body) async {
+  Future<ApiResponse> update(Map<String, dynamic> body, {bool isCustomer = false}) async {
     return await ApiMethodsPrivate.request(
       HttpMethod.post,
-      AccountApi.update,
+      isCustomer ? AccountCustomerApi.updateAccountCustomer : AccountApi.update,
       body: body,
     );
   }
 
   // SỬA: Thêm tham số avatarFile
-  Future<ApiResponse> updateWithAvatar(Map<String, dynamic> body, {required File avatarFile}) async {
+  Future<ApiResponse> updateWithAvatar(Map<String, dynamic> body, {required File avatarFile, bool isCustomer = false}) async {
     // Chuyển đổi body Map thành Map<String, String> cho fields
     final Map<String, String> fields = {};
     body.forEach((key, value) {
@@ -33,10 +42,10 @@ class AccountService {
     });
 
     return await ApiMethodsPrivate.postFormData(
-      AccountApi.update,
+      isCustomer ? AccountCustomerApi.updateAccountCustomer : AccountApi.update,
       fields: fields,
       files: {
-        'avatar': avatarFile, // Key 'avatar' là tên field trên server
+        'avatar': avatarFile,
       },
     );
   }

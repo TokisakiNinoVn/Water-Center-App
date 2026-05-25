@@ -5,7 +5,7 @@ import 'package:clean_water/data/services/account_service.dart';
 import 'package:clean_water/data/services/customer_service.dart';
 import 'package:clean_water/presentation/utils/index_utils.dart';
 import 'package:flutter/material.dart';
-import '../../core/storage/index_storage.dart';
+import '../../../core/storage/index_storage.dart';
 
 class CustomerProvider extends ChangeNotifier {
   final CustomerService _customerService = CustomerService();

@@ -143,7 +143,7 @@ class _WaterReadingState extends State<WaterReadingCustomer> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Tìm theo mã đồng hồ hoặc số công tơ',
+                hintText: 'Tìm theo mã đồng hồ hoặc số công tơ.',
                 hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
                 prefixIcon:
                 Icon(Icons.search, color: Colors.grey.shade400, size: 20),

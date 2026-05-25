@@ -13,6 +13,8 @@ class ColorConfig {
   static final Color textPrimary = Color(0xFF175386);
   static final Color textWhite = Color(0xFFFFFFFF);
   static final Color textBlack = Color(0xFF000000);
+  static final Color textError = Color(0xFFF32F2F);
+  static final Color textWarning = Color(0xFFDAA024);
   static final Color cardPlaceholder = Colors.grey.shade200;
 
   static const Color error = Colors.redAccent;

@@ -354,7 +354,10 @@ class _WaterReadingState extends State<ListWaterMeterCustomer> {
                               Expanded(
                                 child: ElevatedButton(
                                   onPressed: () {
-                                    // TODO: Điều hướng lịch sử tiền nước
+                                    context.push(
+                                        "${CustomerRouterConfig.listInvoice}/${item['id']}"
+                                    );
+
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF10B981),

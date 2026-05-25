@@ -18,7 +18,7 @@ class PolicyPublicTab extends StatelessWidget {
       // ),
       backgroundColor: ColorConfig.backgroundPrimary,
       body: Container(
-        padding: EdgeInsets.only(top: 10, left: 10, right: 10),
+        padding: EdgeInsets.only(top: 40, left: 10, right: 10),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(

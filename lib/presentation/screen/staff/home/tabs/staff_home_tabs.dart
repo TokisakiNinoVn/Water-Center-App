@@ -1,6 +1,6 @@
 import 'package:clean_water/data/configs/color_config.dart';
 import 'package:clean_water/data/configs/menu_home_tab_staff.dart';
-import 'package:clean_water/presentation/providers/account_provider.dart';
+import 'package:clean_water/presentation/providers/staff/account_provider.dart';
 import 'package:clean_water/presentation/routers/configs/app_router_config.dart';
 import 'package:clean_water/presentation/utils/logger_utils.dart';
 import 'package:flutter/material.dart';

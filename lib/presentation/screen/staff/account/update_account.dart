@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:clean_water/presentation/common/snackbar.dart';
-import 'package:clean_water/presentation/providers/account_provider.dart';
+import 'package:clean_water/presentation/providers/staff/account_provider.dart';
 import 'package:clean_water/presentation/utils/index_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -39,7 +39,7 @@ class _UpdateProfileStaffState extends State<UpdateProfileStaff>
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
 
-  int _selectedGender = 0; // 0 = Nam, 1 = Nữ
+  String _selectedGender = "female"; // 0 = Nam, 1 = Nữ
   String? _avatarUrl;
   File? _localAvatar;
 
@@ -84,7 +84,7 @@ class _UpdateProfileStaffState extends State<UpdateProfileStaff>
           _phoneController.text = userMap['phone'] ?? '';
           _emailController.text = userMap['email'] ?? '';
           _addressController.text = userMap['address'] ?? '';
-          _selectedGender = userMap['gender'] ?? 0;
+          _selectedGender = userMap['gender'] ?? "female";
           _avatarUrl = userMap['avatar'];
           _dataLoaded = true;
         });
@@ -171,7 +171,7 @@ class _UpdateProfileStaffState extends State<UpdateProfileStaff>
       bool success;
       if (_localAvatar != null) {
         appLog("Có cập nhật avatar: $_localAvatar");
-        success = await provider.update(updatedInfo, avatar: _localAvatar);
+        success = await provider.update(updatedInfo, avatar: _localAvatar, isCustomer: false);
       } else {
         appLog("Không cập nhật avatar: $_localAvatar");
         success = await provider.update(updatedInfo);
@@ -482,14 +482,14 @@ class _UpdateProfileStaffState extends State<UpdateProfileStaff>
                 controller: _phoneController,
                 label: 'Số điện thoại',
                 icon: Icons.phone_outlined,
-                keyboardType: TextInputType.phone,
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'Vui lòng nhập số điện thoại';
-                  if (!RegExp(r'^0\d{9}$').hasMatch(v.trim())) {
-                    return 'Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)';
-                  }
-                  return null;
-                },
+                // keyboardType: TextInputType.phone,
+                // validator: (v) {
+                //   if (v == null || v.trim().isEmpty) return 'Vui lòng nhập số điện thoại';
+                //   if (!RegExp(r'^0\d{9}$').hasMatch(v.trim())) {
+                //     return 'Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)';
+                //   }
+                //   return null;
+                // },
               ),
               _divider(),
               _buildField(
@@ -641,16 +641,16 @@ class _UpdateProfileStaffState extends State<UpdateProfileStaff>
   Widget _buildGenderSelector() {
     return Row(
       children: [
-        Expanded(child: _genderOption(label: 'Nam', value: 0, icon: Icons.male)),
+        Expanded(child: _genderOption(label: 'Nam', value: "male", icon: Icons.male)),
         const SizedBox(width: 12),
-        Expanded(child: _genderOption(label: 'Nữ', value: 1, icon: Icons.female)),
+        Expanded(child: _genderOption(label: 'Nữ', value: "female", icon: Icons.female)),
       ],
     );
   }
 
   Widget _genderOption({
     required String label,
-    required int value,
+    required String value,
     required IconData icon,
   }) {
     final isSelected = _selectedGender == value;

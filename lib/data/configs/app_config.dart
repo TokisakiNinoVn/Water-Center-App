@@ -14,6 +14,9 @@ class AppConfig {
   static const String domainUrl = "https://quanly.thainguyenedu.vn";
   static const String apiUrl = "https://ttnuoc.beeio.top/api/v1";
 
+  // Path Image
+  static const String logoApp = "assets/images/logo-no-background.png";
+
   static const String apiUrlImage = "$domainUrl/storage";
   static const String apiUrlFile = "$domainUrl/storage";
 
@@ -27,4 +30,7 @@ class AppConfig {
 
   static const bool isViewLogResponse  = false;
   static const bool isViewBodyRequest  = false;
+
+  // static const bool isViewLogResponse  = true;
+  // static const bool isViewBodyRequest  = true;
 }

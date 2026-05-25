@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:clean_water/presentation/common/snackbar.dart';
 import 'package:clean_water/presentation/routers/configs/app_router_config.dart';
 import 'package:clean_water/presentation/routers/configs/staff_router_config.dart';
 import 'package:flutter/material.dart';
@@ -225,14 +226,14 @@ class _AccountTabState extends State<AccountTab>
                       context.push(StaffRouterConfig.updateProfile);
                     },
                   ),
-                  _MenuItem(
-                    icon: Icons.lock_outline_rounded,
-                    color: const Color(0xFF7C5CFC),
-                    label: 'Đổi mật khẩu',
-                    onTap: () {
-                      // context.push(AppRouterConfig.changePassword);
-                    },
-                  ),
+                  // _MenuItem(
+                  //   icon: Icons.lock_outline_rounded,
+                  //   color: const Color(0xFF7C5CFC),
+                  //   label: 'Đổi mật khẩu',
+                  //   onTap: () {
+                  //     // context.push(AppRouterConfig.changePassword);
+                  //   },
+                  // ),
                   _MenuItem(
                     icon: Icons.notifications_none_rounded,
                     color: const Color(0xFFFFBB00),
@@ -240,6 +241,7 @@ class _AccountTabState extends State<AccountTab>
                     // trailing: _Badge(label: '3'),
                     onTap: () {
                       // context.push(AppRouterConfig.notification);
+                      SnackBarHelper.showWarning(context, "Chức năng đang được phát triển!");
                     },
                   ),
                 ]),
@@ -334,41 +336,41 @@ class _AccountTabState extends State<AccountTab>
                 ),
               ),
 
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
-                  child: GestureDetector(
-                    onTap: _handleLogout,
-                    child: Container(
-                      width: double.infinity,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFEEEA),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                            color: const Color(0xFFFF4B4B).withOpacity(0.25),
-                            width: 1.5),
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.logout_rounded,
-                              color: Color(0xFFFF4B4B), size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            'Xóa tài khoản',
-                            style: TextStyle(
-                              color: Color(0xFFFF4B4B),
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+              // SliverToBoxAdapter(
+              //   child: Padding(
+              //     padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
+              //     child: GestureDetector(
+              //       onTap: _handleLogout,
+              //       child: Container(
+              //         width: double.infinity,
+              //         height: 52,
+              //         decoration: BoxDecoration(
+              //           color: const Color(0xFFFFEEEA),
+              //           borderRadius: BorderRadius.circular(16),
+              //           border: Border.all(
+              //               color: const Color(0xFFFF4B4B).withOpacity(0.25),
+              //               width: 1.5),
+              //         ),
+              //         child: const Row(
+              //           mainAxisAlignment: MainAxisAlignment.center,
+              //           children: [
+              //             Icon(Icons.logout_rounded,
+              //                 color: Color(0xFFFF4B4B), size: 20),
+              //             SizedBox(width: 8),
+              //             Text(
+              //               'Xóa tài khoản',
+              //               style: TextStyle(
+              //                 color: Color(0xFFFF4B4B),
+              //                 fontSize: 15,
+              //                 fontWeight: FontWeight.w700,
+              //               ),
+              //             ),
+              //           ],
+              //         ),
+              //       ),
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ),

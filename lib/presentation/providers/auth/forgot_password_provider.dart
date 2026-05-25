@@ -1,6 +1,6 @@
 import 'package:clean_water/data/services/forgot_password_service.dart';
 import 'package:flutter/material.dart';
-import '../../data/models/api_response.dart';
+import '../../../data/models/api_response.dart';
 
 class ForgotPasswordProvider extends ChangeNotifier {
   final ForgotPasswordService _forgotPasswordService = ForgotPasswordService();

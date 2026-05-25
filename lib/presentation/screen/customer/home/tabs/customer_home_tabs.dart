@@ -1,7 +1,7 @@
 import 'package:clean_water/data/configs/color_config.dart';
 import 'package:clean_water/data/configs/menu_home_tab_customer.dart';
 import 'package:clean_water/data/configs/menu_home_tab_staff.dart';
-import 'package:clean_water/presentation/providers/account_provider.dart';
+import 'package:clean_water/presentation/providers/staff/account_provider.dart';
 import 'package:clean_water/presentation/routers/configs/app_router_config.dart';
 import 'package:clean_water/presentation/utils/logger_utils.dart';
 import 'package:flutter/material.dart';
@@ -137,7 +137,7 @@ class _HomeTabState extends State<HomeTabCustomer> with TickerProviderStateMixin
       backgroundColor: ColorConfig.backgroundPrimary,
       body: RefreshIndicator(
         onRefresh: _onRefresh,
-        color: Colors.white,
+        color: ColorConfig.primary,
         // color: _gradientEnd,
         // backgroundColor: Colors.white,
         child: FadeTransition(
@@ -287,19 +287,13 @@ class _HomeTabState extends State<HomeTabCustomer> with TickerProviderStateMixin
               child: CircleAvatar(
                 radius: 32,
                 backgroundColor: Colors.white.withOpacity(0.15),
-                backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
-                    ? NetworkImage(avatarUrl)
-                    : null,
-                child: avatarUrl == null || avatarUrl.isEmpty
-                    ? Text(
-                  name.isNotEmpty ? name[0].toUpperCase() : '?',
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                )
-                    : null,
+                backgroundImage: NetworkImage(
+                  (avatarUrl != null && avatarUrl.isNotEmpty)
+                      ? avatarUrl
+                      : "https://i.pinimg.com/736x/0d/be/82/0dbe825dcbbbb1a041a688c4e282b324.jpg",
+                ),
+                onBackgroundImageError: (_, __) {},
+                child: null,
               ),
             ),
             const SizedBox(width: 16),

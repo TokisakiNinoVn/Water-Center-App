@@ -14,7 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:clean_water/core/storage/index_storage.dart';
 import 'package:clean_water/presentation/routers/configs/app_router_config.dart';
-import 'package:clean_water/presentation/providers/auth_provider.dart';
+import 'package:clean_water/presentation/providers/auth/auth_provider.dart';
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const _kRememberKey = 'remember_me';
@@ -47,10 +47,26 @@ class LoginScreenState extends State<LoginScreen> {
   final _phoneFocus = FocusNode();
   final _passFocus = FocusNode();
 
-  LoginTypeRole loginType = LoginTypeRole.customer;
-  bool get isCustomer => loginType.isCustomer;
-  String get typeRole => loginType.value;
-  String get displayRole => loginType.displayName;
+  // String defaultPhoneCustomer = "09786883251";
+  // String defaultPasswordCustomer = "09786883251";
+  // String defaultPhoneStaff = "03351475777";
+  // String defaultPasswordStaff = "03351475777";
+  // static const _kSavedPasswordKey = 'saved_password';
+
+  // LoginTypeRole loginType = LoginTypeRole.customer;
+  // bool get isCustomer => loginType.isCustomer;
+  // String get typeRole => loginType.value;
+  // String get displayRole => loginType.displayName;
+
+  String defaultPhone = "09786883251";
+  String defaultPassword = "09786883251";
+  static const _kSavedPasswordKey = 'saved_password';
+
+// Fix cứng role là customer (hoặc staff tùy app)
+  LoginTypeRole get loginType => LoginTypeRole.customer;
+  bool get isCustomer => true; // Hoặc false nếu là staff
+  String get typeRole => LoginTypeRole.customer.value;
+  String get displayRole => LoginTypeRole.customer.displayName;
 
   bool _obscurePass = true;
   bool _rememberMe = false;
@@ -70,52 +86,144 @@ class LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _loadSavedPrefs();
 
-    _phoneFocus.addListener(() =>
-        setState(() => _phoneFocused = _phoneFocus.hasFocus));
-    _passFocus.addListener(() =>
-        setState(() => _passFocused = _passFocus.hasFocus));
+    _phoneFocus.addListener(() {
+      setState(() => _phoneFocused = _phoneFocus.hasFocus);
+    });
+
+    _passFocus.addListener(() {
+      setState(() => _passFocused = _passFocus.hasFocus);
+    });
+
+    _loadSavedPrefs();
   }
 
-  void _toggleLoginType() {
-    setState(() {
-      loginType = isCustomer
-          ? LoginTypeRole.staff
-          : LoginTypeRole.customer;
-    });
+  // void _toggleLoginType() {
+  //   setState(() {
+  //     loginType = isCustomer
+  //         ? LoginTypeRole.staff
+  //         : LoginTypeRole.customer;
+  //   });
+  //
+  //   _updateDefaultCredentials();
+  // }
+
+  // String get _defaultPhoneByRole {
+  //   return isCustomer
+  //       ? defaultPhoneCustomer
+  //       : defaultPhoneStaff;
+  // }
+  // String get _defaultPasswordByRole {
+  //   return isCustomer
+  //       ? defaultPasswordCustomer
+  //       : defaultPasswordStaff;
+  // }
+
+
+  // void _updateDefaultCredentials({bool force = false}) {
+  //   final currentPhone = _phoneCtrl.text.trim();
+  //   final currentPassword = _passCtrl.text.trim();
+  //
+  //   final oldDefaultPhone = isCustomer
+  //       ? defaultPhoneStaff
+  //       : defaultPhoneCustomer;
+  //
+  //   final oldDefaultPassword = isCustomer
+  //       ? defaultPasswordStaff
+  //       : defaultPasswordCustomer;
+  //
+  //   final shouldUpdatePhone = force ||
+  //       currentPhone.isEmpty ||
+  //       currentPhone == oldDefaultPhone;
+  //
+  //   final shouldUpdatePassword = force ||
+  //       currentPassword.isEmpty ||
+  //       currentPassword == oldDefaultPassword;
+  //
+  //   if (shouldUpdatePhone) {
+  //     _phoneCtrl.text = _defaultPhoneByRole;
+  //   }
+  //
+  //   if (shouldUpdatePassword) {
+  //     _passCtrl.text = _defaultPasswordByRole;
+  //   }
+  // }
+
+  // ✅ GIỮ LẠI NHƯNG ĐƠN GIẢN HÓA (hoặc xóa nếu không dùng):
+  void _updateDefaultCredentials({bool force = false}) {
+    final currentPhone = _phoneCtrl.text.trim();
+    final currentPassword = _passCtrl.text.trim();
+
+    final shouldUpdatePhone = force || currentPhone.isEmpty;
+    final shouldUpdatePassword = force || currentPassword.isEmpty;
+
+    if (shouldUpdatePhone) {
+      _phoneCtrl.text = defaultPhone;
+    }
+
+    if (shouldUpdatePassword) {
+      _passCtrl.text = defaultPassword;
+    }
   }
 
   Future<void> _loadSavedPrefs() async {
-    await SharedPrefsService.saveValue(PrefType.bool, "is_first_launch", true);
+    await SharedPrefsService.saveValue(
+      PrefType.bool,
+      "is_first_launch",
+      true,
+    );
+
     final prefs = await SharedPreferences.getInstance();
+
+    final remember = prefs.getBool(_kRememberKey) ?? false;
+    final savedPhone = prefs.getString(_kSavedPhoneKey) ?? '';
+
     setState(() {
-      _rememberMe = prefs.getBool(_kRememberKey) ?? false;
-      if (_rememberMe) {
-        _phoneCtrl.text = prefs.getString(_kSavedPhoneKey) ?? '';
+      _rememberMe = remember;
+
+      // Ưu tiên số đã lưu
+      if (_rememberMe && savedPhone.isNotEmpty) {
+        _phoneCtrl.text = savedPhone;
+      } else {
+        // fallback sang số mặc định theo role
+        _phoneCtrl.text = defaultPhone;
+        _passCtrl.text = defaultPassword;
       }
     });
   }
 
   Future<void> _savePrefs() async {
     final prefs = await SharedPreferences.getInstance();
+
     await prefs.setBool(_kRememberKey, _rememberMe);
+
     if (_rememberMe) {
-      await prefs.setString(_kSavedPhoneKey, _phoneCtrl.text);
+      await prefs.setString(
+        _kSavedPhoneKey,
+        _phoneCtrl.text,
+      );
+
+      await prefs.setString(
+        _kSavedPasswordKey,
+        _passCtrl.text,
+      );
     } else {
       await prefs.remove(_kSavedPhoneKey);
+      await prefs.remove(_kSavedPasswordKey);
     }
   }
 
-  String get loginSubtitle {
-    switch (loginType) {
-      case LoginTypeRole.customer:
-        return 'Truy cập dịch vụ nước sạch ✨';
+  // String get loginSubtitle {
+  //   switch (loginType) {
+  //     case LoginTypeRole.customer:
+  //       return 'Truy cập dịch vụ nước sạch ✨';
+  //
+  //     case LoginTypeRole.staff:
+  //       return 'Quản lý hệ thống & vận hành 👋';
+  //   }
+  // }
 
-      case LoginTypeRole.staff:
-        return 'Quản lý hệ thống & vận hành 👋';
-    }
-  }
+  String get loginSubtitle => 'Truy cập dịch vụ nước sạch ✨';
 
   @override
   void dispose() {
@@ -138,32 +246,6 @@ class LoginScreenState extends State<LoginScreen> {
         systemNavigationBarColor: _cBg,
       ),
       child: Scaffold(
-        // appBar: AppBar(
-        //   automaticallyImplyLeading: false,
-        //   backgroundColor: Colors.white,
-        //   elevation: 0,
-        //   title: Row(
-        //     children: [
-        //       InkWell(
-        //         onTap: () => context.pop(),
-        //         borderRadius: BorderRadius.circular(40),
-        //         child: Container(
-        //           width: 40,
-        //           height: 40,
-        //           decoration: BoxDecoration(
-        //             color: const Color(0xFFF5F5F5),
-        //             borderRadius: BorderRadius.circular(40),
-        //           ),
-        //           child: const Icon(
-        //             Icons.arrow_back_ios_new_rounded,
-        //             size: 18,
-        //             color: Color(0xFF1A1A1A),
-        //           ),
-        //         ),
-        //       ),
-        //     ],
-        //   ),
-        // ),
         backgroundColor: Colors.transparent,
         body: Stack(
           children: [
@@ -178,29 +260,6 @@ class LoginScreenState extends State<LoginScreen> {
                 fit: BoxFit.cover,
               ),
             ),
-            // Positioned(
-            //   top: 0,
-            //   left: 0,
-            //   right: 0,
-            //   height: size.height * 0.45,
-            //   child: InkWell(
-            //     onTap: () => context.pop(),
-            //     borderRadius: BorderRadius.circular(40),
-            //     child: Container(
-            //       width: 40,
-            //       height: 40,
-            //       decoration: BoxDecoration(
-            //         color: const Color(0xFFF5F5F5),
-            //         borderRadius: BorderRadius.circular(40),
-            //       ),
-            //       child: const Icon(
-            //         Icons.arrow_back_ios_new_rounded,
-            //         size: 18,
-            //         color: Color(0xFF1A1A1A),
-            //       ),
-            //     ),
-            //   ),
-            // ),
 
             // ── Gradient overlay phía dưới ảnh ──────────────────────────
             Positioned(
@@ -242,7 +301,13 @@ class LoginScreenState extends State<LoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         InkWell(
-                          onTap: () => context.pop(),
+                          onTap: () {
+                            if (context.canPop()) {
+                              context.pop();
+                            } else {
+                              context.go(AppRouterConfig.homePublic);
+                            }
+                          },
                           borderRadius: BorderRadius.circular(40),
                           child: Container(
                             width: 42,
@@ -355,86 +420,86 @@ class LoginScreenState extends State<LoginScreen> {
         children: [
 
           // ─── Switch Role ───────────────────────
-          Center(
-            child: GestureDetector(
-              onTap: _toggleLoginType,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: _cInputBg,
-                  borderRadius: BorderRadius.circular(40),
-                  border: Border.all(color: _cBorder),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: isCustomer
-                            ? LinearGradient(
-                          colors: [
-                            ColorConfig.primary,
-                            ColorConfig.primary.withOpacity(.7),
-                          ],
-                        )
-                            : null,
-                        color: isCustomer ? null : Colors.transparent,
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Text(
-                        'Khách hàng',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: isCustomer
-                              ? Colors.white
-                              : _cTextSecondary,
-                        ),
-                      ),
-                    ),
-
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: !isCustomer
-                            ? const LinearGradient(
-                          colors: [
-                            _cAccent2,
-                            _cAccent1,
-                          ],
-                        )
-                            : null,
-                        color: !isCustomer
-                            ? null
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Text(
-                        'Nhân viên',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: !isCustomer
-                              ? Colors.white
-                              : _cTextSecondary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          // Center(
+          //   child: GestureDetector(
+          //     onTap: _toggleLoginType,
+          //     child: AnimatedContainer(
+          //       duration: const Duration(milliseconds: 300),
+          //       padding: const EdgeInsets.all(4),
+          //       decoration: BoxDecoration(
+          //         color: _cInputBg,
+          //         borderRadius: BorderRadius.circular(40),
+          //         border: Border.all(color: _cBorder),
+          //       ),
+          //       child: Row(
+          //         mainAxisSize: MainAxisSize.min,
+          //         children: [
+          //           AnimatedContainer(
+          //             duration: const Duration(milliseconds: 250),
+          //             padding: const EdgeInsets.symmetric(
+          //               horizontal: 18,
+          //               vertical: 10,
+          //             ),
+          //             decoration: BoxDecoration(
+          //               gradient: isCustomer
+          //                   ? LinearGradient(
+          //                 colors: [
+          //                   ColorConfig.primary,
+          //                   ColorConfig.primary.withOpacity(.7),
+          //                 ],
+          //               )
+          //                   : null,
+          //               color: isCustomer ? null : Colors.transparent,
+          //               borderRadius: BorderRadius.circular(30),
+          //             ),
+          //             child: Text(
+          //               'Khách hàng',
+          //               style: TextStyle(
+          //                 fontSize: 13,
+          //                 fontWeight: FontWeight.w700,
+          //                 color: isCustomer
+          //                     ? Colors.white
+          //                     : _cTextSecondary,
+          //               ),
+          //             ),
+          //           ),
+          //
+          //           AnimatedContainer(
+          //             duration: const Duration(milliseconds: 250),
+          //             padding: const EdgeInsets.symmetric(
+          //               horizontal: 18,
+          //               vertical: 10,
+          //             ),
+          //             decoration: BoxDecoration(
+          //               gradient: !isCustomer
+          //                   ? const LinearGradient(
+          //                 colors: [
+          //                   _cAccent2,
+          //                   _cAccent1,
+          //                 ],
+          //               )
+          //                   : null,
+          //               color: !isCustomer
+          //                   ? null
+          //                   : Colors.transparent,
+          //               borderRadius: BorderRadius.circular(30),
+          //             ),
+          //             child: Text(
+          //               'Nhân viên',
+          //               style: TextStyle(
+          //                 fontSize: 13,
+          //                 fontWeight: FontWeight.w700,
+          //                 color: !isCustomer
+          //                     ? Colors.white
+          //                     : _cTextSecondary,
+          //               ),
+          //             ),
+          //           ),
+          //         ],
+          //       ),
+          //     ),
+          //   ),
+          // ),
 
           const SizedBox(height: 22),
           // Tiêu đề
@@ -443,7 +508,7 @@ class LoginScreenState extends State<LoginScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Đăng nhập ${displayRole.toLowerCase()}',
+                  Text('Đăng nhập',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
@@ -585,10 +650,7 @@ class LoginScreenState extends State<LoginScreen> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          // onTap: () => context.go(AppRouterConfig.register), // ← đổi route cho phù hợp
-          onTap: () {
-            SnackBarHelper.showWaring(context, "Chức năng đang được phát triển thêm!");
-          },
+          onTap: () => context.push(AppRouterConfig.register),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -674,7 +736,7 @@ class LoginScreenState extends State<LoginScreen> {
       // onTap: authProvider.isLoading ? null : () => _handleLogin(authProvider),
       onTap: authProvider.isLoading
           ? null
-          : () => _handleLogin(loginType, authProvider),
+          : () => _handleLogin(authProvider),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         width: double.infinity,
@@ -752,32 +814,24 @@ class LoginScreenState extends State<LoginScreen> {
   }
 
   // ─── Xử lý đăng nhập ─────────────────────────────────────────────────────
-  Future<void> _handleLogin(
-      LoginTypeRole loginTypeRole,
-      AuthProvider authProvider,
-      ) async {
+  Future<void> _handleLogin(AuthProvider authProvider) async {
     await _savePrefs();
     final data = {
       'phone': _phoneCtrl.text,
       'password': _passCtrl.text,
     };
 
-    final response = await authProvider.login(
-      loginTypeRole,
-      data,
-    );
+    final response = await authProvider.login(data);
 
     if (response && mounted) {
       final role = authProvider.currentLoginRole;
-
-      // appLog("Role login: $role");
 
       if (role?.isCustomer == true) {
         context.go(CustomerRouterConfig.homeCustomer);
       } else if (role?.isStaff == true) {
         context.go(StaffRouterConfig.homeStaff);
       } else {
-        SnackBarHelper.showWaring(
+        SnackBarHelper.showWarning(
           context,
           'Role chưa có màn hình!',
         );

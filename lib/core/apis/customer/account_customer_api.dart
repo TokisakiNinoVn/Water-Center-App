@@ -1,6 +1,7 @@
 import 'package:clean_water/data/configs/app_config.dart';
 
-class AccountApi {
-  static const String me = '${AppConfig.apiUrl}/user-info';
-  static const String update = '${AppConfig.apiUrl}/change-info';
+class AccountCustomerApi {
+  static const String informationAccountCustomer = '${AppConfig.apiUrl}/customer/profile';
+  static const String deleteAccountApi = '${AppConfig.apiUrl}/delete-account';
+  static const String updateAccountCustomer = '${AppConfig.apiUrl}/customer/profile/update';
 }

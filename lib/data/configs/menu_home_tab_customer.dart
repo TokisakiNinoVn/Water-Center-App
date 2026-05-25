@@ -20,6 +20,7 @@ final List<Map<String, dynamic>> menuHomeCustomerItems = [
     'color': ColorConfig.primary,
     'route': CustomerRouterConfig.listSearchWaterMeter,
   },
+
   // {
   //   'icon': Icons.history,
   //   'title': 'Lịch sử ghi',
@@ -32,7 +33,7 @@ final List<Map<String, dynamic>> menuHomeCustomerItems = [
     'title': 'Hỗ trợ',
     'subtitle': 'Hỗ trợ khách hàng',
     'color': ColorConfig.primary,
-    'route': "/",
+    'route': CustomerRouterConfig.createSupport,
   },
   // {
   //   'icon': Icons.pie_chart,

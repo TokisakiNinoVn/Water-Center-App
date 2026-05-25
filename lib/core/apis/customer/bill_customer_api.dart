@@ -1,6 +1,6 @@
 import 'package:clean_water/data/configs/app_config.dart';
 
-class AuthCustomerApi {
+class BillCustomerApi {
   //Customer
-  static const String login = '${AppConfig.apiUrl}/customer/login';
+  static const String details = '${AppConfig.apiUrl}/customer/bill-detail';
 }

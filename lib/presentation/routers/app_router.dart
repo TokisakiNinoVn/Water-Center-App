@@ -1,4 +1,5 @@
 import 'package:clean_water/presentation/routers/staff_router.dart';
+import 'package:clean_water/presentation/screen/auth/register_account.dart';
 import 'package:clean_water/presentation/screen/notification/list_notification.dart';
 import 'package:clean_water/presentation/screen/public/home_public.dart';
 import 'package:clean_water/presentation/screen/staff/home/home_staff.dart';
@@ -30,6 +31,11 @@ final appRouter = GoRouter(
     GoRoute(
       path: "/login",
       builder: (_, __) => const LoginScreen(),
+    ),
+
+    GoRoute(
+      path: "/register",
+      builder: (_, __) => const RegisterAccount(),
     ),
 
     GoRoute(

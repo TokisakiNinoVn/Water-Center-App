@@ -43,6 +43,13 @@ class WaterIndexService {
     );
   }
 
+  Future<ApiResponse> listInvoice(int id) async {
+    return await ApiMethodsPrivate.request(
+      HttpMethod.get,
+      "${WaterIndexCustomerApi.listInvoice}/$id",
+    );
+  }
+
   Future<ApiResponse> saveIndexCustomer(
     Map<String, dynamic> data,
     { required File imageFile }

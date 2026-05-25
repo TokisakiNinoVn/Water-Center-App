@@ -10,42 +10,30 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/storage/index_storage.dart';
 
-class UpdateProfileStaff extends StatefulWidget {
-  const UpdateProfileStaff({super.key});
+class UpdateProfileCustomer extends StatefulWidget {
+  const UpdateProfileCustomer({super.key});
 
   @override
-  State<UpdateProfileStaff> createState() => _UpdateProfileStaffState();
+  State<UpdateProfileCustomer> createState() => _UpdateProfileCustomerState();
 }
 
-class _UpdateProfileStaffState extends State<UpdateProfileStaff>
+class _UpdateProfileCustomerState extends State<UpdateProfileCustomer>
     with SingleTickerProviderStateMixin {
-  // Form keys
+  // Form key
   final _infoFormKey = GlobalKey<FormState>();
-  final _passwordFormKey = GlobalKey<FormState>();
 
-  // Info controllers
+  // Controllers
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _addressController = TextEditingController();
 
-  // Password controllers
-  final _currentPasswordController = TextEditingController();
-  final _newPasswordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-
-  // Password visibility
-  bool _obscureCurrentPassword = true;
-  bool _obscureNewPassword = true;
-  bool _obscureConfirmPassword = true;
-
-  String _selectedGender = "female"; // 0 = Nam, 1 = Nữ
+  String _selectedGender = "female";
   String? _avatarUrl;
   File? _localAvatar;
 
-  // Loading states
+  // Loading state
   bool _isUpdatingInfo = false;
-  bool _isUpdatingPassword = false;
   bool _dataLoaded = false;
 
   late AnimationController _animController;
@@ -73,18 +61,18 @@ class _UpdateProfileStaffState extends State<UpdateProfileStaff>
 
   Future<void> _loadUserData() async {
     final provider = context.read<AccountProvider>();
-    final success = await provider.loadInformationAccount();
+    final success = await provider.loadInformationAccount(isCustomer: true);
 
     if (success && mounted) {
       final userMap = provider.accountResponse?.data?['user'] as Map<String, dynamic>?;
       if (userMap != null) {
         setState(() {
           _userData = userMap;
-          _nameController.text = userMap['name'] ?? '';
-          _phoneController.text = userMap['phone'] ?? '';
+          _nameController.text = userMap['ten_khach_hang'] ?? '';
+          _phoneController.text = userMap['so_dien_thoai'] ?? '';
           _emailController.text = userMap['email'] ?? '';
-          _addressController.text = userMap['address'] ?? '';
-          _selectedGender = userMap['gender'] ?? "female";
+          _addressController.text = userMap['dia_chi'] ?? ''; // sửa key
+          _selectedGender = userMap['gioi_tinh'] ?? "female";
           _avatarUrl = userMap['avatar'];
           _dataLoaded = true;
         });
@@ -105,11 +93,9 @@ class _UpdateProfileStaffState extends State<UpdateProfileStaff>
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(
         source: ImageSource.gallery,
-        // imageQuality: 85,
-        // maxWidth: 800,
       );
 
-      if (pickedFile == null){
+      if (pickedFile == null) {
         appLog("Không thể chọn ảnh avatar: ");
         return;
       } else {
@@ -125,34 +111,7 @@ class _UpdateProfileStaffState extends State<UpdateProfileStaff>
     }
   }
 
-  // Validators for password
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Vui lòng nhập mật khẩu mới';
-    }
-    if (value.length < 6) {
-      return 'Mật khẩu phải có ít nhất 6 ký tự';
-    }
-    if (!RegExp(r'(?=.*[A-Z])').hasMatch(value)) {
-      return 'Mật khẩu phải có ít nhất 1 chữ in hoa';
-    }
-    if (!RegExp(r'(?=.*[0-9])').hasMatch(value)) {
-      return 'Mật khẩu phải có ít nhất 1 chữ số';
-    }
-    if (!RegExp(r'(?=.*[!@#\$&*~])').hasMatch(value)) {
-      return 'Mật khẩu phải có ít nhất 1 ký tự đặc biệt (!@#\$&*~)';
-    }
-    return null;
-  }
-
-  String? _validateConfirmPassword(String? value) {
-    if (value != _newPasswordController.text) {
-      return 'Mật khẩu xác nhận không khớp';
-    }
-    return null;
-  }
-
-  // Update personal info only
+  // Cập nhật thông tin cá nhân
   Future<void> _updateInfo() async {
     if (!_infoFormKey.currentState!.validate()) return;
 
@@ -160,48 +119,45 @@ class _UpdateProfileStaffState extends State<UpdateProfileStaff>
     final provider = context.read<AccountProvider>();
 
     try {
+      // Sử dụng đúng key theo backend
       final updatedInfo = {
-        'name': _nameController.text.trim(),
-        'phone': _phoneController.text.trim(),
+        'ten_khach_hang': _nameController.text.trim(),
+        'so_dien_thoai': _phoneController.text.trim(),
         'email': _emailController.text.trim(),
-        'gender': _selectedGender,
-        'address': _addressController.text.trim(),
+        'gioi_tinh': _selectedGender,
+        'dia_chi': _addressController.text.trim(),
       };
 
       bool success;
       if (_localAvatar != null) {
         appLog("Có cập nhật avatar: $_localAvatar");
-        success = await provider.update(updatedInfo, avatar: _localAvatar);
+        success = await provider.update(updatedInfo, avatar: _localAvatar, isCustomer: true);
       } else {
-        appLog("Không cập nhật avatar: $_localAvatar");
-        success = await provider.update(updatedInfo);
+        appLog("Không cập nhật avatar");
+        success = await provider.update(updatedInfo, isCustomer: true);
       }
 
       if (success) {
-        // Update local storage and state
+        // Cập nhật local storage
         final userForStorage = Map<String, dynamic>.from(_userData ?? {});
         userForStorage.addAll(updatedInfo);
-        // Remove any password fields if present
-        userForStorage.remove('current_password');
-        userForStorage.remove('password');
-        userForStorage.remove('password_confirmation');
         final String jsonString = json.encode(userForStorage);
         await SharedPrefsService.saveValue(PrefType.string, 'user', jsonString);
 
         setState(() {
           _userData = userForStorage;
-          _avatarUrl = null; // will be reloaded later, but keep local preview
+          _avatarUrl = null; // sẽ load lại sau
         });
 
         if (mounted) {
           SnackBarHelper.showSuccess(context, 'Cập nhật thông tin thành công!');
-          // Reload user data to get fresh avatar URL
-          await provider.loadInformationAccount();
+          // Reload lại để lấy avatar URL mới từ server
+          await provider.loadInformationAccount(isCustomer: true);
           final newUserMap = provider.accountResponse?.data?['user'] as Map<String, dynamic>?;
           if (newUserMap != null && mounted) {
             setState(() {
               _avatarUrl = newUserMap['avatar'];
-              _localAvatar = null; // clear local preview after server save
+              _localAvatar = null;
             });
           }
         }
@@ -220,60 +176,12 @@ class _UpdateProfileStaffState extends State<UpdateProfileStaff>
     }
   }
 
-  // Update password only
-  Future<void> _updatePassword() async {
-    if (!_passwordFormKey.currentState!.validate()) return;
-
-    // Check if current password is provided
-    if (_currentPasswordController.text.trim().isEmpty) {
-      SnackBarHelper.showError(context, 'Vui lòng nhập mật khẩu hiện tại');
-      return;
-    }
-
-    setState(() => _isUpdatingPassword = true);
-    final provider = context.read<AccountProvider>();
-
-    try {
-      final passwordData = {
-        'current_password': _currentPasswordController.text.trim(),
-        'password': _newPasswordController.text.trim(),
-        'password_confirmation': _confirmPasswordController.text.trim(),
-      };
-
-      final success = await provider.update(passwordData);
-
-      if (success) {
-        if (mounted) {
-          SnackBarHelper.showSuccess(context, 'Đổi mật khẩu thành công!');
-          // Clear password fields
-          _currentPasswordController.clear();
-          _newPasswordController.clear();
-          _confirmPasswordController.clear();
-        }
-      } else {
-        if (mounted) {
-          SnackBarHelper.showError(context, "Đổi mật khẩu thất bại");
-        }
-      }
-    } catch (e) {
-      appLog("Error updating password: $e");
-      if (mounted) {
-        SnackBarHelper.showError(context, 'Đổi mật khẩu thất bại: ${e.toString()}');
-      }
-    } finally {
-      if (mounted) setState(() => _isUpdatingPassword = false);
-    }
-  }
-
   @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
     _addressController.dispose();
-    _currentPasswordController.dispose();
-    _newPasswordController.dispose();
-    _confirmPasswordController.dispose();
     _animController.dispose();
     super.dispose();
   }
@@ -364,7 +272,7 @@ class _UpdateProfileStaffState extends State<UpdateProfileStaff>
                   _buildAvatarPicker(),
                   const SizedBox(height: 20),
                   const Text(
-                    'Chỉnh sửa hồ sơ nhân viên',
+                    'Cập nhật thông tin khách hàng',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -384,7 +292,7 @@ class _UpdateProfileStaffState extends State<UpdateProfileStaff>
 
   Widget _buildAvatarPicker() {
     return GestureDetector(
-      onTap: (_isUpdatingInfo || _isUpdatingPassword) ? null : _pickAvatar,
+      onTap: _isUpdatingInfo ? null : _pickAvatar,
       child: Stack(
         alignment: Alignment.bottomRight,
         children: [
@@ -406,7 +314,7 @@ class _UpdateProfileStaffState extends State<UpdateProfileStaff>
               child: _buildAvatarContent(),
             ),
           ),
-          if (!_isUpdatingInfo && !_isUpdatingPassword)
+          if (!_isUpdatingInfo)
             Container(
               width: 28,
               height: 28,
@@ -456,7 +364,7 @@ class _UpdateProfileStaffState extends State<UpdateProfileStaff>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Personal information section
+          // Thông tin cá nhân
           _sectionLabel('Thông tin cá nhân'),
           const SizedBox(height: 12),
           Form(
@@ -482,14 +390,6 @@ class _UpdateProfileStaffState extends State<UpdateProfileStaff>
                 controller: _phoneController,
                 label: 'Số điện thoại',
                 icon: Icons.phone_outlined,
-                // keyboardType: TextInputType.phone,
-                // validator: (v) {
-                //   if (v == null || v.trim().isEmpty) return 'Vui lòng nhập số điện thoại';
-                //   if (!RegExp(r'^0\d{9}$').hasMatch(v.trim())) {
-                //     return 'Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)';
-                //   }
-                //   return null;
-                // },
               ),
               _divider(),
               _buildField(
@@ -506,47 +406,9 @@ class _UpdateProfileStaffState extends State<UpdateProfileStaff>
           const SizedBox(height: 12),
           _buildGenderSelector(),
           const SizedBox(height: 20),
-          // Save info button - GREEN/BLUE
+          // Nút lưu thông tin
           _buildSaveInfoButton(),
           const SizedBox(height: 24),
-
-          // Password change section
-          _sectionLabel('Đổi mật khẩu'),
-          const SizedBox(height: 12),
-          Form(
-            key: _passwordFormKey,
-            child: _buildCard([
-              _buildPasswordField(
-                controller: _currentPasswordController,
-                label: 'Mật khẩu hiện tại',
-                icon: Icons.lock_outline,
-                obscureText: _obscureCurrentPassword,
-                onToggle: () => setState(() => _obscureCurrentPassword = !_obscureCurrentPassword),
-              ),
-              _divider(),
-              _buildPasswordField(
-                controller: _newPasswordController,
-                label: 'Mật khẩu mới',
-                icon: Icons.lock_outline,
-                obscureText: _obscureNewPassword,
-                onToggle: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
-                validator: _validatePassword,
-              ),
-              _divider(),
-              _buildPasswordField(
-                controller: _confirmPasswordController,
-                label: 'Xác nhận mật khẩu mới',
-                icon: Icons.lock_outline,
-                obscureText: _obscureConfirmPassword,
-                onToggle: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
-                validator: _validateConfirmPassword,
-              ),
-            ]),
-          ),
-          const SizedBox(height: 20),
-          // Update password button - ORANGE/RED
-          _buildUpdatePasswordButton(),
-          const SizedBox(height: 16),
         ],
       ),
     );
@@ -609,35 +471,6 @@ class _UpdateProfileStaffState extends State<UpdateProfileStaff>
     );
   }
 
-  Widget _buildPasswordField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    required bool obscureText,
-    required VoidCallback onToggle,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      validator: validator,
-      style: const TextStyle(fontSize: 15, color: Color(0xFF212121)),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(fontSize: 14, color: Color(0xFF9E9E9E)),
-        prefixIcon: Icon(icon, size: 20, color: const Color(0xFF1565C0)),
-        suffixIcon: IconButton(
-          icon: Icon(obscureText ? Icons.visibility_off : Icons.visibility,
-              size: 20, color: const Color(0xFF9E9E9E)),
-          onPressed: onToggle,
-        ),
-        border: InputBorder.none,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        errorStyle: const TextStyle(fontSize: 12),
-      ),
-    );
-  }
-
   Widget _buildGenderSelector() {
     return Row(
       children: [
@@ -655,7 +488,7 @@ class _UpdateProfileStaffState extends State<UpdateProfileStaff>
   }) {
     final isSelected = _selectedGender == value;
     return GestureDetector(
-      onTap: (_isUpdatingInfo || _isUpdatingPassword) ? null : () => setState(() => _selectedGender = value),
+      onTap: _isUpdatingInfo ? null : () => setState(() => _selectedGender = value),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -735,47 +568,6 @@ class _UpdateProfileStaffState extends State<UpdateProfileStaff>
             SizedBox(width: 8),
             Text(
               'Lưu thông tin',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.3,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUpdatePasswordButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: OutlinedButton(
-        onPressed: _isUpdatingPassword ? null : _updatePassword,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFFD32F2F),
-          side: const BorderSide(color: Color(0xFFD32F2F), width: 1.5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-        child: _isUpdatingPassword
-            ? const SizedBox(
-          width: 22,
-          height: 22,
-          child: CircularProgressIndicator(
-            strokeWidth: 2.5,
-            color: Color(0xFFD32F2F),
-          ),
-        )
-            : const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.lock_reset_rounded, size: 20),
-            SizedBox(width: 8),
-            Text(
-              'Cập nhật mật khẩu',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

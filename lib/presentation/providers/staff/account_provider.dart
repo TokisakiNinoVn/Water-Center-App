@@ -4,7 +4,7 @@ import 'package:clean_water/data/models/api_response.dart';
 import 'package:clean_water/data/services/account_service.dart';
 import 'package:clean_water/presentation/utils/index_utils.dart';
 import 'package:flutter/material.dart';
-import '../../core/storage/index_storage.dart';
+import '../../../core/storage/index_storage.dart';
 
 class AccountProvider extends ChangeNotifier {
   final AccountService _accountService = AccountService();
@@ -15,21 +15,22 @@ class AccountProvider extends ChangeNotifier {
   ApiResponse? accountResponse;
   Map<String, dynamic> userData = {};
 
-  Future<bool> loadInformationAccount() async {
+  Future<bool> loadInformationAccount({bool isCustomer = false}) async {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
 
     try {
-      final res = await _accountService.me();
-      accountResponse = res;
+      ApiResponse response;
+      response = await _accountService.me(isCustomer: isCustomer);
+      accountResponse = response;
 
-      if (res.success == true) {
-        userData = res.data;
+      if (response.success == true) {
+        userData = response.data;
         // appLog("Data user: ${userData}");
         return true;
       } else {
-        errorMessage = res.message;
+        errorMessage = response.message;
         return false;
       }
 
@@ -68,7 +69,7 @@ class AccountProvider extends ChangeNotifier {
   }
 
   // Method 2: Update có avatar (có thể có hoặc không có file)
-  Future<bool> update(Map<String, dynamic> body, {File? avatar}) async {
+  Future<bool> update(Map<String, dynamic> body, {File? avatar, bool isCustomer = false}) async {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
@@ -77,11 +78,10 @@ class AccountProvider extends ChangeNotifier {
       final ApiResponse res;
 
       if (avatar != null) {
-        // Gửi multipart/form-data khi có ảnh
-        res = await _accountService.updateWithAvatar(body, avatarFile: avatar);
+        res = await _accountService.updateWithAvatar(body, avatarFile: avatar, isCustomer: isCustomer);
       } else {
         // Gửi JSON thông thường
-        res = await _accountService.update(body);
+        res = await _accountService.update(body, isCustomer: isCustomer);
       }
 
       if (res.success == true) {

@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 // import 'package:spa_app/services/user_discount_service.dart';
 
-class ListDiscountScreen extends StatefulWidget {
+class CreateSupport extends StatefulWidget {
 
-  const ListDiscountScreen({
+  const CreateSupport({
     super.key,
   });
 
   @override
-  State<ListDiscountScreen> createState() =>  _ListDiscountScreenState();
+  State<CreateSupport> createState() =>  _CreateSupportState();
 }
 
-class _ListDiscountScreenState extends State<ListDiscountScreen> {
+class _CreateSupportState extends State<CreateSupport> {
   // final UserDiscountService _userDiscountService = UserDiscountService();
 
   @override
@@ -51,7 +51,7 @@ class _ListDiscountScreenState extends State<ListDiscountScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text("______", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
+            const Text("Tạo phiếu hỗ trợ", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
           ],
         ),
       ),

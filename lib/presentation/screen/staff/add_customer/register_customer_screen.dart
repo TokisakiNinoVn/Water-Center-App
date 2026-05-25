@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:clean_water/presentation/common/snackbar.dart';
-import 'package:clean_water/presentation/providers/customer_provider.dart';
-import 'package:clean_water/presentation/providers/list_provider.dart';
+import 'package:clean_water/presentation/providers/customer/customer_provider.dart';
+import 'package:clean_water/presentation/providers/shared/list_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -564,7 +564,7 @@ class _AddCustomerState extends State<RegisterCustomerScreen> {
                           ),
                         )
                             : const Text(
-                          "Tạo khách hàng",
+                          "Thêm khách hàng",
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
