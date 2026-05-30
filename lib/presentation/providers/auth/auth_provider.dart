@@ -26,7 +26,7 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final res = await _authService.login(data);
-      appLog("Save role: ${res}");
+      // appLog("Save role: ${res}");
 
       authResponse = res;
       final dataLogin = res.data['data'];
