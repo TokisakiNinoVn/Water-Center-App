@@ -1,0 +1,20 @@
+meta {
+  name: Tuyến đọc
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{domainUrl}}//reading-routes
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{tokenNhanVien}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
