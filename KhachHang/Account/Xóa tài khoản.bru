@@ -1,0 +1,20 @@
+meta {
+  name: Xóa tài khoản
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{domainUrl}}/delete-account
+  body: multipartForm
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{tokenNhanVien}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
