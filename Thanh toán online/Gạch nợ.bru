@@ -1,0 +1,28 @@
+meta {
+  name: Gạch nợ
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{domainUrl}}/pay-api/payment
+  body: multipartForm
+  auth: inherit
+}
+
+headers {
+  Authorization: 2423423sdf34523dsqe
+  Content-Type: application/x-www-form-urlencoded
+}
+
+body:multipart-form {
+  cus_code: 35352
+  invoice_id: 3
+  amount: 284050.00
+  trans_code: 132432
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

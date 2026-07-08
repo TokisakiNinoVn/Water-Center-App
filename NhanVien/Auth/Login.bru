@@ -16,8 +16,8 @@ headers {
 
 body:json {
    {
-    "phone": "0395277825",
-    "password": "0395277825"
+    "phone": "0846689921",
+    "password": "0846689921"
   }
 }
 
@@ -25,9 +25,11 @@ script:post-response {
   const json = res.getBody();
   
   if (json?.data?.access_token) {
-    bru.setEnvVar("tokenNhanVien", json.data.access_token);
-  }
+    const token = json.data.access_token;
   
+    bru.setEnvVar("tokenNhanVien", token);
+    bru.setEnvVar("tokenKhachHang", token);
+  }
 }
 
 settings {
