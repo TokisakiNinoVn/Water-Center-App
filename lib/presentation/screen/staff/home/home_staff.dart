@@ -7,7 +7,7 @@ import 'package:clean_water/data/configs/app_config.dart';
 import 'package:clean_water/presentation/routers/configs/app_router_config.dart';
 import 'package:clean_water/presentation/screen/more/exit_confirm_dialog.dart';
 import 'package:clean_water/presentation/screen/staff/home/tabs/account_tabs.dart';
-import 'package:clean_water/presentation/screen/staff/home/tabs/home_tabs.dart';
+import 'package:clean_water/presentation/screen/staff/home/tabs/staff_home_tabs.dart';
 
 import 'package:clean_water/presentation/helper/check_login_helper.dart';
 
@@ -22,7 +22,7 @@ class _HomeStaffState extends State<HomeStaff> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = const [
-    HomeTab(),
+    HomeTabStaff(),
     AccountTab(),
   ];
 

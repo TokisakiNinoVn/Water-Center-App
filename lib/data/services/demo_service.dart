@@ -1,4 +1,5 @@
-import '../../core/apis/auth_api.dart';
+import 'package:clean_water/core/apis/staff/auth_staff_api.dart';
+
 import '../../core/network/api_methods_public.dart';
 import '../../presentation/helper/url_builder.dart';
 import '../enums/http_method.dart';
@@ -8,7 +9,7 @@ class DemoService {
   Future<ApiResponse> postService(data) async {
     return await ApiMethodsPublic.request(
       HttpMethod.post,
-      AuthApi.login,
+      AuthStaffApi.login,
       body: data,
     );
   }
@@ -16,7 +17,7 @@ class DemoService {
   Future<ApiResponse> putService(int? id, data) async {
     return await ApiMethodsPublic.request(
       HttpMethod.put,
-      UrlBuilder.withId(AuthApi.login, id),
+      UrlBuilder.withId(AuthStaffApi.login, id),
       body: data,
     );
   }
@@ -24,21 +25,21 @@ class DemoService {
   Future<ApiResponse> getV1Service() async {
     return await ApiMethodsPublic.request(
       HttpMethod.get,
-      AuthApi.getOTP,
+      AuthStaffApi.getOTP,
     );
   }
 
   Future<ApiResponse> getV2Service(String? id) async {
     return await ApiMethodsPublic.request(
       HttpMethod.get,
-      UrlBuilder.withId(AuthApi.getOTP, id),
+      UrlBuilder.withId(AuthStaffApi.getOTP, id),
     );
   }
 
   Future<ApiResponse> getV3Service(String? id, String? name) async {
     return await ApiMethodsPublic.request(
       HttpMethod.get,
-      AuthApi.getOTP,
+      AuthStaffApi.getOTP,
       queryParams: {
         'id': id,
         'name': name,
@@ -49,7 +50,7 @@ class DemoService {
   Future<ApiResponse> deleteService(String? id) async {
     return await ApiMethodsPublic.request(
       HttpMethod.delete,
-      UrlBuilder.withId(AuthApi.getOTP, id),
+      UrlBuilder.withId(AuthStaffApi.getOTP, id),
     );
   }
 }

@@ -1,5 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+
+import 'package:clean_water/data/configs/app_config.dart';
+import '../../presentation/common/snackbar.dart';
+import '../storage/local_storage.dart';
 import 'package:clean_water/core/storage/shared_preferences_utils.dart';
 import 'package:clean_water/data/enums/http_method.dart';
 import 'package:clean_water/data/models/api_response.dart';
@@ -7,12 +14,6 @@ import 'package:clean_water/presentation/routers/app_router.dart';
 import 'package:clean_water/presentation/routers/configs/app_router_config.dart';
 import 'package:clean_water/presentation/utils/index_utils.dart';
 import 'package:clean_water/presentation/utils/map_status_code.dart';
-import 'package:go_router/go_router.dart';
-import 'package:http/http.dart' as http;
-import 'package:http_parser/http_parser.dart';
-
-import '../../presentation/common/snackbar.dart';
-import '../storage/local_storage.dart';
 
 class ApiMethodsPrivate {
   // Base headers for all requests
@@ -35,62 +36,14 @@ class ApiMethodsPrivate {
   // Get authentication headers with token and email
   static Future<Map<String, String>> _getAuthHeaders() async {
     final token = await LocalStorage.getToken();
-    final email = await LocalStorage.getEmail();
+    // final email = await LocalStorage.getEmail();
 
     return {
       ..._defaultHeaders,
       if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-      if (email != null && email.isNotEmpty) 'X-user-email': email,
+      // if (email != null && email.isNotEmpty) 'X-user-email': email,
     };
   }
-
-  // Build standardized ApiResponse from http.Response
-  // static ApiResponse _buildApiResponse(http.Response res) {
-  //   final statusCode = res.statusCode;
-  //
-  //   dynamic decoded;
-  //   try {
-  //     decoded = res.body.isNotEmpty ? jsonDecode(res.body) : {};
-  //   } catch (_) {
-  //     decoded = {};
-  //   }
-  //
-  //   final success = statusCode >= 200 && statusCode < 300;
-  //
-  //   String? message;
-  //   dynamic data;
-  //   int? totalDocs;
-  //   Map<String, dynamic>? meta;
-  //
-  //   if (decoded is Map<String, dynamic>) {
-  //     message = decoded['message'];
-  //
-  //     final temp = Map<String, dynamic>.from(decoded);
-  //
-  //     temp.remove('message');
-  //     totalDocs = temp.remove('totalDocs');
-  //     meta = temp.remove('meta');
-  //
-  //     data = temp;
-  //   } else if (decoded is List) {
-  //     data = decoded;
-  //   } else {
-  //     data = {};
-  //   }
-  //
-  //   message ??= MapStatusCode.mapStatusToMessage(statusCode);
-  //
-  //   final apiResponse = ApiResponse(
-  //     statusCode: statusCode,
-  //     success: success,
-  //     message: message,
-  //     totalDocs: totalDocs,
-  //     meta: meta,
-  //     data: data,
-  //   );
-  //
-  //   return apiResponse;
-  // }
 
   static ApiResponse _buildApiResponse(http.Response res) {
     final statusCode = res.statusCode;
@@ -154,6 +107,10 @@ class ApiMethodsPrivate {
         bool handle401 = true,
       }) async {
     try {
+
+      if(AppConfig.isViewLogResponse) {
+        appLog('[RAW REQUEST] $url | Body: ${body}');
+      }
       // Build URI with query parameters
       Uri uri = Uri.parse(url);
       if (queryParams != null && queryParams.isNotEmpty) {
@@ -208,6 +165,10 @@ class ApiMethodsPrivate {
           break;
       }
 
+      if(AppConfig.isViewLogResponse) {
+        appLog('[RAW RESPONSE] $url | Status: ${res.statusCode} | Body: ${res.body} - ', data: res.body);
+      }
+
       // Handle 401 Unauthorized
       if (handle401 && res.statusCode == 401) {
         await _handle401();
@@ -218,7 +179,7 @@ class ApiMethodsPrivate {
           data: {},
         );
       }
-      appLog('[LOG-CHECK] - URL Request: $url');
+      // appLog('[LOG-CHECK] - URL Request: $url');
 
       return _buildApiResponse(res);
     } catch (e) {
@@ -255,11 +216,11 @@ class ApiMethodsPrivate {
 
       // Get authentication headers (without Content-Type because multipart will set boundary)
       final token = await LocalStorage.getToken();
-      final email = await LocalStorage.getEmail();
+      // final email = await LocalStorage.getEmail();
 
       final Map<String, String> headers = {
         if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-        if (email != null && email.isNotEmpty) 'X-user-email': email,
+        // if (email != null && email.isNotEmpty) 'X-user-email': email,
         if (additionalHeaders != null) ...additionalHeaders,
       };
 

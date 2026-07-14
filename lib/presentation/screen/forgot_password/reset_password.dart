@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../providers/forgot_password_provider.dart';
+import '../../providers/auth/forgot_password_provider.dart';
 import '../../routers/configs/app_router_config.dart';
 
 class ResetPasswordScreen extends StatefulWidget {

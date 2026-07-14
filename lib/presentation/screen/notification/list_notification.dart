@@ -1,8 +1,7 @@
+import 'package:clean_water/presentation/providers/customer/notification_customer_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import 'package:clean_water/presentation/providers/notification_provider.dart';
 
 class ListNotificationScreen extends StatefulWidget {
   const ListNotificationScreen({super.key});
@@ -19,12 +18,12 @@ class _ListNotificationScreenState extends State<ListNotificationScreen> {
   }
 
   Future<void> _loadNotifications() async {
-    final provider = Provider.of<NotificationProvider>(context, listen: false);
-    await provider.loadList();
+    final provider = Provider.of<NotificationCustomerProvider>(context, listen: false);
+    await provider.loadListNotificationCustomer();
   }
 
   Future<void> _handleNotificationTap(Map<String, dynamic> notification) async {
-    final provider = Provider.of<NotificationProvider>(context, listen: false);
+    final provider = Provider.of<NotificationCustomerProvider>(context, listen: false);
     final isRead = notification['is_read'] ?? false;
     final notificationId = notification['id'];
 
@@ -40,9 +39,9 @@ class _ListNotificationScreenState extends State<ListNotificationScreen> {
 
     // Nếu chưa đọc thì gọi API checkRead sau khi đóng bottom sheet
     if (!isRead && mounted) {
-      await provider.checkRead({'id': notificationId});
+      await provider.isReadNotification(notificationId);
       // Refresh lại list để cập nhật trạng thái
-      await provider.loadList();
+      await provider.loadListNotificationCustomer();
     }
   }
 
@@ -62,9 +61,9 @@ class _ListNotificationScreenState extends State<ListNotificationScreen> {
         centerTitle: false,
       ),
       backgroundColor: const Color(0xFFF8F4F0),
-      body: Consumer<NotificationProvider>(
+      body: Consumer<NotificationCustomerProvider>(
         builder: (context, provider, child) {
-          if (provider.isLoading && provider.notificationResponse == null) {
+          if (provider.isLoading && provider.response == null) {
             return const Center(
               child: CircularProgressIndicator(
                 color: Color(0xFF6C63FF),
@@ -109,11 +108,11 @@ class _ListNotificationScreenState extends State<ListNotificationScreen> {
           }
 
           // Lấy dữ liệu và ép kiểu đúng
-          final data = provider.notificationResponse?.data;
+          final data = provider.response?.data;
           List<dynamic> notifications = [];
 
           if (data != null && data is List) {
-            notifications = data as List;
+            notifications = data;
           }
 
           if (notifications.isEmpty) {
@@ -244,18 +243,18 @@ class _ListNotificationScreenState extends State<ListNotificationScreen> {
                       children: [
                         Row(
                           children: [
-                            Expanded(
-                              child: Text(
-                                title,
-                                style: TextStyle(
-                                  fontWeight: isRead ? FontWeight.w500 : FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Colors.black87,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
+                            // Expanded(
+                            //   child: Text(
+                            //     title,
+                            //     style: TextStyle(
+                            //       fontWeight: isRead ? FontWeight.w500 : FontWeight.bold,
+                            //       fontSize: 16,
+                            //       color: Colors.black87,
+                            //     ),
+                            //     maxLines: 1,
+                            //     overflow: TextOverflow.ellipsis,
+                            //   ),
+                            // ),
                             if (!isRead)
                               Container(
                                 width: 8,
@@ -340,16 +339,16 @@ class NotificationDetailBottomSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           // Drag handle
-          Container(
-            margin: const EdgeInsets.only(top: 12),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 16),
+          // Container(
+          //   margin: const EdgeInsets.only(top: 12),
+          //   width: 40,
+          //   height: 4,
+          //   decoration: BoxDecoration(
+          //     color: Colors.grey[300],
+          //     borderRadius: BorderRadius.circular(2),
+          //   ),
+          // ),
+          // const SizedBox(height: 16),
           // Header
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),

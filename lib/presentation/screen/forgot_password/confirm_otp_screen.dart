@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'package:clean_water/presentation/providers/forgot_password_provider.dart';
+import 'package:clean_water/presentation/providers/auth/forgot_password_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import 'package:clean_water/presentation/providers/auth_provider.dart';
+import 'package:clean_water/presentation/providers/auth/auth_provider.dart';
 import 'package:clean_water/presentation/routers/configs/app_router_config.dart';
 import 'package:clean_water/data/configs/color_config.dart';
 

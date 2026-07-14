@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:clean_water/data/configs/app_config.dart';
 import 'package:clean_water/presentation/utils/index_utils.dart';
 import 'package:http/http.dart' as http;
 
@@ -69,6 +70,9 @@ class ApiMethodsPublic {
         Map<String, dynamic>? queryParams,
       }) async {
     try {
+      if(AppConfig.isViewLogResponse) {
+        appLog('[RAW REQUEST] $url | Body: ${body}');
+      }
       Uri uri = Uri.parse(url);
 
       // ✅ auto build query param
@@ -107,6 +111,9 @@ class ApiMethodsPublic {
       }
 
       // appLog('[RAW] $method $uri | ${res.statusCode} | ${res.body}');
+      if(AppConfig.isViewLogResponse) {
+        appLog('[RAW RESPONSE] $url | Status: ${res.statusCode} | Body: ${res.body}');
+      }
       return _buildApiResponse(res);
 
     } catch (e) {
