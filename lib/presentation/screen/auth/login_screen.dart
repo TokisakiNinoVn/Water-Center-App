@@ -58,8 +58,8 @@ class LoginScreenState extends State<LoginScreen> {
   // String get typeRole => loginType.value;
   // String get displayRole => loginType.displayName;
 
-  String defaultPhone = "0361026850";
-  String defaultPassword = "0361026850";
+  String defaultPhone = "";
+  String defaultPassword = "";
   static const _kSavedPasswordKey = 'saved_password';
 
   // Fix cứng role là customer (hoặc staff tùy app)
