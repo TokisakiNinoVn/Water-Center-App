@@ -33,7 +33,7 @@ final List<Map<String, dynamic>> menuHomeCustomerItems = [
     'title': 'Hỗ trợ',
     'subtitle': 'Hỗ trợ khách hàng',
     'color': ColorConfig.primary,
-    'route': CustomerRouterConfig.createSupport,
+    'route': CustomerRouterConfig.listSupport,
   },
   // {
   //   'icon': Icons.pie_chart,

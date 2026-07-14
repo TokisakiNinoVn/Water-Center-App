@@ -1,4 +1,5 @@
 import 'package:clean_water/presentation/providers/customer/account_customer_provider.dart';
+import 'package:clean_water/presentation/providers/customer/support_customer_provider.dart';
 import 'package:clean_water/presentation/providers/staff/account_provider.dart';
 import 'package:clean_water/presentation/providers/customer/bill_customer_provider.dart';
 import 'package:clean_water/presentation/providers/customer/notification_customer_provider.dart';
@@ -9,7 +10,6 @@ import 'package:clean_water/presentation/providers/shared/list_provider.dart';
 import 'package:clean_water/presentation/providers/staff/water_index_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 
 import 'package:clean_water/data/datasources/index_remote.dart';
 import 'package:clean_water/data/repositories/repo_impl.dart';
@@ -26,7 +26,6 @@ class AppProviders extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ForgotPasswordProvider()),
         ChangeNotifierProvider(create: (_) => AccountProvider()),
@@ -38,6 +37,9 @@ class AppProviders extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => WaterIndexCustomerProvider()),
         ChangeNotifierProvider(create: (_) => BillCustomerProvider()),
         ChangeNotifierProvider(create: (_) => AccountCustomerProvider()),
+
+        // Customer
+        ChangeNotifierProvider(create: (_) => SupportCustomerProvider()),
       ],
       child: child,
     );

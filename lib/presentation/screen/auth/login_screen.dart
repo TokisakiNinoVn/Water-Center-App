@@ -58,11 +58,11 @@ class LoginScreenState extends State<LoginScreen> {
   // String get typeRole => loginType.value;
   // String get displayRole => loginType.displayName;
 
-  String defaultPhone = "09786883251";
-  String defaultPassword = "09786883251";
+  String defaultPhone = "0361026850";
+  String defaultPassword = "0361026850";
   static const _kSavedPasswordKey = 'saved_password';
 
-// Fix cứng role là customer (hoặc staff tùy app)
+  // Fix cứng role là customer (hoặc staff tùy app)
   LoginTypeRole get loginType => LoginTypeRole.customer;
   bool get isCustomer => true; // Hoặc false nếu là staff
   String get typeRole => LoginTypeRole.customer.value;
@@ -119,7 +119,6 @@ class LoginScreenState extends State<LoginScreen> {
   //       : defaultPasswordStaff;
   // }
 
-
   // void _updateDefaultCredentials({bool force = false}) {
   //   final currentPhone = _phoneCtrl.text.trim();
   //   final currentPassword = _passCtrl.text.trim();
@@ -167,11 +166,7 @@ class LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _loadSavedPrefs() async {
-    await SharedPrefsService.saveValue(
-      PrefType.bool,
-      "is_first_launch",
-      true,
-    );
+    await SharedPrefsService.saveValue(PrefType.bool, "is_first_launch", true);
 
     final prefs = await SharedPreferences.getInstance();
 
@@ -198,15 +193,9 @@ class LoginScreenState extends State<LoginScreen> {
     await prefs.setBool(_kRememberKey, _rememberMe);
 
     if (_rememberMe) {
-      await prefs.setString(
-        _kSavedPhoneKey,
-        _phoneCtrl.text,
-      );
+      await prefs.setString(_kSavedPhoneKey, _phoneCtrl.text);
 
-      await prefs.setString(
-        _kSavedPasswordKey,
-        _passCtrl.text,
-      );
+      await prefs.setString(_kSavedPasswordKey, _passCtrl.text);
     } else {
       await prefs.remove(_kSavedPhoneKey);
       await prefs.remove(_kSavedPasswordKey);
@@ -272,10 +261,7 @@ class LoginScreenState extends State<LoginScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      _cBg,
-                    ],
+                    colors: [Colors.transparent, _cBg],
                   ),
                 ),
               ),
@@ -295,7 +281,11 @@ class LoginScreenState extends State<LoginScreen> {
               child: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(left: 20, right: 20, top: 12),
+                    padding: const EdgeInsets.only(
+                      left: 20,
+                      right: 20,
+                      top: 12,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -418,7 +408,6 @@ class LoginScreenState extends State<LoginScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           // ─── Switch Role ───────────────────────
           // Center(
           //   child: GestureDetector(
@@ -500,7 +489,6 @@ class LoginScreenState extends State<LoginScreen> {
           //     ),
           //   ),
           // ),
-
           const SizedBox(height: 22),
           // Tiêu đề
           Row(
@@ -508,7 +496,8 @@ class LoginScreenState extends State<LoginScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Đăng nhập',
+                  Text(
+                    'Đăng nhập',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
@@ -582,18 +571,26 @@ class LoginScreenState extends State<LoginScreen> {
                       height: 20,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(6),
-                        gradient: _rememberMe
-                            ? const LinearGradient(colors: [_cAccent1, _cAccent2])
-                            : null,
+                        gradient:
+                            _rememberMe
+                                ? const LinearGradient(
+                                  colors: [_cAccent1, _cAccent2],
+                                )
+                                : null,
                         color: _rememberMe ? null : _cInputBg,
                         border: Border.all(
                           color: _rememberMe ? Colors.transparent : _cBorder,
                           width: 1.5,
                         ),
                       ),
-                      child: _rememberMe
-                          ? const Icon(Icons.check_rounded, color: Colors.white, size: 13)
-                          : null,
+                      child:
+                          _rememberMe
+                              ? const Icon(
+                                Icons.check_rounded,
+                                color: Colors.white,
+                                size: 13,
+                              )
+                              : null,
                     ),
                     const SizedBox(width: 8),
                     const Text(
@@ -671,7 +668,11 @@ class LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(width: 4),
-              const Icon(Icons.arrow_forward_rounded, color: _cAccent1, size: 16),
+              const Icon(
+                Icons.arrow_forward_rounded,
+                color: _cAccent1,
+                size: 16,
+              ),
             ],
           ),
         ),
@@ -693,7 +694,11 @@ class LoginScreenState extends State<LoginScreen> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.info_outline_rounded, size: 12, color: _cTextMuted),
+              const Icon(
+                Icons.info_outline_rounded,
+                size: 12,
+                color: _cTextMuted,
+              ),
               const SizedBox(width: 6),
               Text(
                 '${AppConfig.appName} v${AppConfig.appVersion} (build ${AppConfig.appVersionBuild})',
@@ -721,10 +726,7 @@ class LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 10),
         Text(
           AppConfig.appFooterCopyright,
-          style: TextStyle(
-            fontSize: 11,
-            color: _cTextMuted.withOpacity(0.6),
-          ),
+          style: TextStyle(fontSize: 11, color: _cTextMuted.withOpacity(0.6)),
         ),
       ],
     );
@@ -734,80 +736,82 @@ class LoginScreenState extends State<LoginScreen> {
   Widget _buildLoginButton(AuthProvider authProvider) {
     return GestureDetector(
       // onTap: authProvider.isLoading ? null : () => _handleLogin(authProvider),
-      onTap: authProvider.isLoading
-          ? null
-          : () => _handleLogin(authProvider),
+      onTap: authProvider.isLoading ? null : () => _handleLogin(authProvider),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         width: double.infinity,
         height: 52,
         decoration: BoxDecoration(
-          gradient: authProvider.isLoading
-              ? LinearGradient(
-            colors: [
-              ColorConfig.primary,
-              ColorConfig.primary
-            ],
-          )
-              : LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              ColorConfig.primary,
-              ColorConfig.primary.withOpacity(.7)
-            ],
-          ),
+          gradient:
+              authProvider.isLoading
+                  ? LinearGradient(
+                    colors: [ColorConfig.primary, ColorConfig.primary],
+                  )
+                  : LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      ColorConfig.primary,
+                      ColorConfig.primary.withOpacity(.7),
+                    ],
+                  ),
           borderRadius: BorderRadius.circular(16),
-          boxShadow: authProvider.isLoading
-              ? []
-              : [
-            BoxShadow(
-              color: _cAccent1.withOpacity(0.35),
-              blurRadius: 18,
-              offset: const Offset(0, 6),
-            ),
-          ],
+          boxShadow:
+              authProvider.isLoading
+                  ? []
+                  : [
+                    BoxShadow(
+                      color: _cAccent1.withOpacity(0.35),
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
         ),
         child: Center(
-          child: authProvider.isLoading
-              ? const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
-              ),
-              SizedBox(width: 12),
-              Text(
-                'Đang đăng nhập...',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          )
-              : const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Đăng nhập',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.3,
-                ),
-              ),
-              SizedBox(width: 8),
-              Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
-            ],
-          ),
+          child:
+              authProvider.isLoading
+                  ? const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        'Đang đăng nhập...',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  )
+                  : const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Đăng nhập',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ],
+                  ),
         ),
       ),
     );
@@ -816,10 +820,7 @@ class LoginScreenState extends State<LoginScreen> {
   // ─── Xử lý đăng nhập ─────────────────────────────────────────────────────
   Future<void> _handleLogin(AuthProvider authProvider) async {
     await _savePrefs();
-    final data = {
-      'phone': _phoneCtrl.text,
-      'password': _passCtrl.text,
-    };
+    final data = {'phone': _phoneCtrl.text, 'password': _passCtrl.text};
 
     final response = await authProvider.login(data);
 
@@ -831,21 +832,18 @@ class LoginScreenState extends State<LoginScreen> {
       } else if (role?.isStaff == true) {
         context.go(StaffRouterConfig.homeStaff);
       } else {
-        SnackBarHelper.showWarning(
-          context,
-          'Role chưa có màn hình!',
-        );
+        SnackBarHelper.showWarning(context, 'Role chưa có màn hình!');
       }
-
     } else if (mounted) {
-
+      appLog(
+        "Lỗi khi đăng nhập: ${authProvider.errorMessage ?? 'Lỗi không xác định'}",
+      );
       SnackBarHelper.showError(
         context,
         authProvider.errorMessage ?? 'Lỗi không xác định',
       );
     }
   }
-
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
   Widget _buildFieldLabel(String text) {
@@ -879,15 +877,16 @@ class LoginScreenState extends State<LoginScreen> {
           color: isFocused ? _cAccent1 : _cBorder,
           width: isFocused ? 1.5 : 1,
         ),
-        boxShadow: isFocused
-            ? [
-          BoxShadow(
-            color: _cAccent1.withOpacity(0.12),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ]
-            : [],
+        boxShadow:
+            isFocused
+                ? [
+                  BoxShadow(
+                    color: _cAccent1.withOpacity(0.12),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+                : [],
       ),
       child: TextField(
         controller: controller,

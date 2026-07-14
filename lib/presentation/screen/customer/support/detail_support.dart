@@ -1,91 +1,51 @@
 import 'package:clean_water/data/configs/color_config.dart';
 import 'package:clean_water/presentation/common/snackbar.dart';
 import 'package:clean_water/presentation/providers/customer/support_customer_provider.dart';
+import 'package:clean_water/presentation/utils/logger_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-class CreateSupport extends StatefulWidget {
-  const CreateSupport({super.key});
+class DetailSupport extends StatefulWidget {
+  final int id;
+  const DetailSupport({super.key, required this.id});
 
   @override
-  State<CreateSupport> createState() => _CreateSupportState();
+  State<DetailSupport> createState() => _DetailSupportState();
 }
 
-class _CreateSupportState extends State<CreateSupport> {
+class _DetailSupportState extends State<DetailSupport> {
   final SupportCustomerProvider _supportCustomerProvider =
-      SupportCustomerProvider();
+  SupportCustomerProvider();
 
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-
-  bool isLoading = false;
-
-  final TextEditingController titleController = TextEditingController();
-  final TextEditingController contentController = TextEditingController();
+  bool isLoading = true;
+  List<dynamic> messages = [];
 
   @override
-  void dispose() {
-    titleController.dispose();
-    contentController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _loadDetail();
   }
 
-  Future<void> create() async {
-    FocusScope.of(context).unfocus();
+  Future<void> _loadDetail() async {
+    setState(() => isLoading = true);
 
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() {
-      isLoading = true;
-    });
-
-    final payload = {
-      'tieu_de': titleController.text.trim(),
-      'noi_dung': contentController.text.trim(),
-    };
-
-    final success = await _supportCustomerProvider.createSupport(payload);
+    final success = await _supportCustomerProvider.detailSupport(widget.id);
 
     if (!mounted) return;
 
     setState(() {
       isLoading = false;
+      if (success) {
+        messages = _supportCustomerProvider.detailSupportData ?? [];
+      }
     });
 
-    if (success) {
-      SnackBarHelper.showSuccess(context, "Gửi phiếu hỗ trợ thành công");
-      context.pop(true);
-    } else {
+    if (!success) {
       SnackBarHelper.showError(
         context,
         _supportCustomerProvider.errorMessage ?? "Có lỗi xảy ra",
       );
     }
-  }
-
-  InputDecoration inputDecoration({
-    required String label,
-    required String hint,
-    IconData? icon,
-  }) {
-    return InputDecoration(
-      labelText: label,
-      hintText: hint,
-      prefixIcon: icon != null ? Icon(icon) : null,
-      filled: true,
-      fillColor: const Color(0xffF7F7F7),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Colors.blue, width: 1.5),
-      ),
-    );
   }
 
   @override
@@ -118,7 +78,7 @@ class _CreateSupportState extends State<CreateSupport> {
             ),
             const SizedBox(width: 12),
             const Text(
-              "Tạo phiếu hỗ trợ",
+              "Chi tiết phiếu hỗ trợ",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
@@ -128,112 +88,76 @@ class _CreateSupportState extends State<CreateSupport> {
           ],
         ),
       ),
-      bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.all(16),
-        child: SizedBox(
-          height: 52,
-          child: ElevatedButton(
-            onPressed: isLoading ? null : create,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: ColorConfig.primary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : messages.isEmpty
+          ? const Center(child: Text("Không có dữ liệu"))
+          : ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: messages.length,
+        itemBuilder: (context, index) {
+          final msg = messages[index];
+          final isCustomer = msg['nguoi_gui_type'] == 'khach_hang';
+
+          return Align(
+            alignment: isCustomer
+                ? Alignment.centerRight
+                : Alignment.centerLeft,
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(14),
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.75,
               ),
-            ),
-            child:
-                isLoading
-                    ? const SizedBox(
-                      height: 22,
-                      width: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: Colors.white,
-                      ),
-                    )
-                    : const Text(
-                      "Gửi phiếu hỗ trợ",
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
-          ),
-        ),
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Container(
-              padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
+                color: isCustomer
+                    ? const Color(0xFF2196F3)
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Thông tin hỗ trợ",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  // Tên người gửi
+                  Text(
+                    msg['nguoi_gui']['ten'] ?? 'Người dùng',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: isCustomer ? Colors.white70 : Colors.grey[700],
+                    ),
                   ),
-
+                  const SizedBox(height: 6),
+                  // Nội dung
+                  Text(
+                    msg['noi_dung'] ?? '',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: isCustomer ? Colors.white : Colors.black87,
+                      height: 1.4,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-
-                  const Text(
-                    "Vui lòng mô tả rõ vấn đề bạn đang gặp phải để chúng tôi có thể hỗ trợ nhanh nhất.",
-                    style: TextStyle(color: Colors.grey),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  TextFormField(
-                    controller: titleController,
-                    textInputAction: TextInputAction.next,
-                    decoration: inputDecoration(
-                      label: "Tiêu đề",
-                      hint: "Ví dụ: Không thanh toán được",
-                      icon: Icons.title,
+                  // Thời gian
+                  Text(
+                    msg['created_at_format'] ?? '',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isCustomer ? Colors.white60 : Colors.grey[500],
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return "Vui lòng nhập tiêu đề";
-                      }
-
-                      if (value.trim().length < 5) {
-                        return "Tiêu đề quá ngắn";
-                      }
-
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  TextFormField(
-                    controller: contentController,
-                    minLines: 6,
-                    maxLines: 10,
-                    decoration: inputDecoration(
-                      label: "Nội dung",
-                      hint: "Mô tả chi tiết vấn đề bạn gặp phải...",
-                      // icon: Icons.description_outlined,
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return "Vui lòng nhập nội dung";
-                      }
-
-                      if (value.trim().length < 10) {
-                        return "Nội dung quá ngắn";
-                      }
-
-                      return null;
-                    },
                   ),
                 ],
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

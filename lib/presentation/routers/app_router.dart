@@ -23,27 +23,14 @@ final appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
   initialLocation: "/",
   routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const SplashScreen(),
-    ),
+    GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
 
-    GoRoute(
-      path: "/login",
-      builder: (_, __) => const LoginScreen(),
-    ),
+    GoRoute(path: "/login", builder: (_, __) => const LoginScreen()),
 
-    GoRoute(
-      path: "/register",
-      builder: (_, __) => const RegisterAccount(),
-    ),
+    GoRoute(path: "/register", builder: (_, __) => const RegisterAccount()),
 
-    GoRoute(
-      path: "/home-public",
-      builder: (_, __) => const HomePublic(),
-    ),
+    GoRoute(path: "/home-public", builder: (_, __) => const HomePublic()),
     ...customerRoutes,
     ...staffRoutes,
   ],
 );
-

@@ -20,16 +20,18 @@ class AppConfig {
   static const String apiUrlImage = "$domainUrl/storage";
   static const String apiUrlFile = "$domainUrl/storage";
 
-  static const String apiUrlPrivacyPolicy = "https://truyxuatnguongoc.chethainguyen.net.vn/p/privacy-policy";
-  static const String apiUrlSupport = "https://truyxuatnguongoc.chethainguyen.net.vn/p/support";
+  static const String apiUrlPrivacyPolicy =
+      "https://ttnuoc.beeio.top/page/policy";
+  static const String apiUrlSupport = "https://ttnuoc.beeio.top/page/support";
+  static const String apiUrlTerm = "https://ttnuoc.beeio.top/page/term";
 
   static const String apiKey = "";
   static const bool isProduction = true;
   static const bool isDevelop = true;
   static const bool isSkipGettingStarted = true;
 
-  static const bool isViewLogResponse  = false;
-  static const bool isViewBodyRequest  = false;
+  static const bool isViewLogResponse = false;
+  static const bool isViewBodyRequest = false;
 
   // static const bool isViewLogResponse  = true;
   // static const bool isViewBodyRequest  = true;

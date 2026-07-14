@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:clean_water/data/configs/app_config.dart';
 import 'package:clean_water/data/configs/color_config.dart';
 import 'package:clean_water/data/services/account_service.dart';
 import 'package:clean_water/presentation/common/snackbar.dart';
@@ -12,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../core/storage/index_storage.dart';
 
@@ -37,13 +39,13 @@ class _AccountTabState extends State<AccountCustomerTab>
       vsync: this,
       duration: const Duration(milliseconds: 750),
     );
-    _fadeAnim =
-        CurvedAnimation(parent: _animController, curve: Curves.easeOut);
+    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
     _slideAnim = Tween<Offset>(
       begin: const Offset(0, 0.06),
       end: Offset.zero,
     ).animate(
-        CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic));
+      CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+    );
 
     _loadUserData();
   }
@@ -62,29 +64,29 @@ class _AccountTabState extends State<AccountCustomerTab>
   Future<void> _showConfirmDeleteAccount() async {
     final result = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => CustomDialog(
-        iconColor: ColorConfig.primary,
-        title: 'Xác nhận xóa tài khoản',
-        body:
-        'Các thông tin tài khoản của bạn sẽ được xóa. Bạn có chắc chắn xóa tài khoản này?',
-        cancelLabel: 'Đóng',
-        confirmLabel: 'Xác nhận',
-        confirmColor: ColorConfig.error,
-        onConfirm: () {
-          Navigator.of(dialogContext).pop(true);
-        },
-      ),
+      builder:
+          (dialogContext) => CustomDialog(
+            iconColor: ColorConfig.primary,
+            title: 'Xác nhận xóa tài khoản',
+            body:
+                'Các thông tin tài khoản của bạn sẽ được xóa. Bạn có chắc chắn xóa tài khoản này?',
+            cancelLabel: 'Đóng',
+            confirmLabel: 'Xác nhận',
+            confirmColor: ColorConfig.error,
+            onConfirm: () {
+              Navigator.of(dialogContext).pop(true);
+            },
+          ),
     );
 
     if (result == true && mounted) {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (_) => Center(
-          child: CircularProgressIndicator(
-            color: ColorConfig.primary,
-          ),
-        ),
+        builder:
+            (_) => Center(
+              child: CircularProgressIndicator(color: ColorConfig.primary),
+            ),
       );
 
       try {
@@ -95,10 +97,7 @@ class _AccountTabState extends State<AccountCustomerTab>
         if (mounted) Navigator.of(context).pop();
 
         if (success) {
-          SnackBarHelper.showSuccess(
-            context,
-            "Xóa tài khoản thành công!",
-          );
+          SnackBarHelper.showSuccess(context, "Xóa tài khoản thành công!");
           SharedPreferencesUtils.logOut();
           context.go(AppRouterConfig.login);
         } else {
@@ -111,10 +110,7 @@ class _AccountTabState extends State<AccountCustomerTab>
         // Đóng loading nếu lỗi
         if (mounted) Navigator.of(context).pop();
 
-        SnackBarHelper.showError(
-          context,
-          "Lỗi xóa tài khoản: $e",
-        );
+        SnackBarHelper.showError(context, "Lỗi xóa tài khoản: $e");
       }
     }
   }
@@ -122,29 +118,28 @@ class _AccountTabState extends State<AccountCustomerTab>
   Future<void> _showConfirmLogout() async {
     final result = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => CustomDialog(
-        iconColor: ColorConfig.primary,
-        title: 'Xác nhận đăng xuất',
-        body:
-        'Đăng xuất tài khoản khỏi thiết bị?',
-        cancelLabel: 'Đóng',
-        confirmLabel: 'Xác nhận',
-        confirmColor: ColorConfig.error,
-        onConfirm: () {
-          Navigator.of(dialogContext).pop(true);
-        },
-      ),
+      builder:
+          (dialogContext) => CustomDialog(
+            iconColor: ColorConfig.primary,
+            title: 'Xác nhận đăng xuất',
+            body: 'Đăng xuất tài khoản khỏi thiết bị?',
+            cancelLabel: 'Đóng',
+            confirmLabel: 'Xác nhận',
+            confirmColor: ColorConfig.error,
+            onConfirm: () {
+              Navigator.of(dialogContext).pop(true);
+            },
+          ),
     );
 
     if (result == true && mounted) {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (_) => Center(
-          child: CircularProgressIndicator(
-            color: ColorConfig.error,
-          ),
-        ),
+        builder:
+            (_) => Center(
+              child: CircularProgressIndicator(color: ColorConfig.error),
+            ),
       );
 
       try {
@@ -163,18 +158,12 @@ class _AccountTabState extends State<AccountCustomerTab>
           SharedPreferencesUtils.logOut();
           context.go(AppRouterConfig.login);
         } else {
-          SnackBarHelper.showError(
-            context,
-            "Đăng xuất thất bại!",
-          );
+          SnackBarHelper.showError(context, "Đăng xuất thất bại!");
         }
       } catch (e) {
         // Đóng loading nếu lỗi
         if (mounted) Navigator.of(context).pop();
-        SnackBarHelper.showError(
-          context,
-          "Lỗi đăng xuất: $e",
-        );
+        SnackBarHelper.showError(context, "Lỗi đăng xuất: $e");
       }
     }
   }
@@ -185,17 +174,32 @@ class _AccountTabState extends State<AccountCustomerTab>
     super.dispose();
   }
 
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+
+    if (!await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication, // Mở bằng trình duyệt mặc định
+    )) {
+      throw Exception('Không thể mở $url');
+    }
+  }
+
   String get _displayName => _user?['name'] as String? ?? 'Học viên';
   String get _email => _user?['email'] as String? ?? '';
   String get _role => _user?['role'] as String? ?? 'student';
   String get _roleLabel =>
-      _role == 'student' ? 'Học sinh' : _role == 'teacher' ? 'Giáo viên' : 'Người dùng';
-  String get roleUser =>  _user?['role'] ?? 'nv';
+      _role == 'student'
+          ? 'Học sinh'
+          : _role == 'teacher'
+          ? 'Giáo viên'
+          : 'Người dùng';
+  String get roleUser => _user?['role'] ?? 'nv';
   String get roleDisplay => roleUser == 'nv' ? "Nhân viên" : "Không xác định";
   String get _avatarLetter =>
-      _displayName.isNotEmpty ? _displayName.split(' ').last[0].toUpperCase() : 'U';
-
-
+      _displayName.isNotEmpty
+          ? _displayName.split(' ').last[0].toUpperCase()
+          : 'U';
 
   // Future<void> _handleLogout() async {
   //   final shouldLogout = await showDialog<bool>(
@@ -342,38 +346,38 @@ class _AccountTabState extends State<AccountCustomerTab>
                 // ),
 
                 // ── Section: Tài khoản ─────────────────────────────────
-                SliverToBoxAdapter(
-                  child: _SectionHeader(title: 'Tài khoản'),
-                ),
+                SliverToBoxAdapter(child: _SectionHeader(title: 'Tài khoản')),
                 // const SizedBox(height: 10),b
                 SliverToBoxAdapter(
-                  child: _MenuGroup(items: [
-                    _MenuItem(
-                      icon: Icons.person_outline_rounded,
-                      color: const Color(0xFF4F8EF7),
-                      label: 'Chỉnh sửa thông tin cá nhân',
-                      onTap: () {
-                        context.push(CustomerRouterConfig.updateAccount);
-                      },
-                    ),
-                    _MenuItem(
-                      icon: Icons.lock_outline_rounded,
-                      color: const Color(0xFF7C5CFC),
-                      label: 'Đổi mật khẩu',
-                      onTap: () {
-                        // context.push(AppRouterConfig.changePassword);
-                      },
-                    ),
-                    // _MenuItem(
-                    //   icon: Icons.notifications_none_rounded,
-                    //   color: const Color(0xFFFFBB00),
-                    //   label: 'Thông báo',
-                    //   // trailing: _Badge(label: '3'),
-                    //   onTap: () {
-                    //     // context.push(AppRouterConfig.notification);
-                    //   },
-                    // ),
-                  ]),
+                  child: _MenuGroup(
+                    items: [
+                      _MenuItem(
+                        icon: Icons.person_outline_rounded,
+                        color: const Color(0xFF4F8EF7),
+                        label: 'Chỉnh sửa thông tin cá nhân',
+                        onTap: () {
+                          context.push(CustomerRouterConfig.updateAccount);
+                        },
+                      ),
+                      // _MenuItem(
+                      //   icon: Icons.lock_outline_rounded,
+                      //   color: const Color(0xFF7C5CFC),
+                      //   label: 'Đổi mật khẩu',
+                      //   onTap: () {
+                      //     // context.push(AppRouterConfig.changePassword);
+                      //   },
+                      // ),
+                      // _MenuItem(
+                      //   icon: Icons.notifications_none_rounded,
+                      //   color: const Color(0xFFFFBB00),
+                      //   label: 'Thông báo',
+                      //   // trailing: _Badge(label: '3'),
+                      //   onTap: () {
+                      //     // context.push(AppRouterConfig.notification);
+                      //   },
+                      // ),
+                    ],
+                  ),
                 ),
 
                 // ── Section: Học tập ───────────────────────────────────
@@ -404,28 +408,45 @@ class _AccountTabState extends State<AccountCustomerTab>
                 // ),
 
                 // ── Section: Hỗ trợ ───────────────────────────────────
+                SliverToBoxAdapter(child: _SectionHeader(title: 'Hỗ trợ')),
                 SliverToBoxAdapter(
-                  child: _SectionHeader(title: 'Hỗ trợ'),
-                ),
-                SliverToBoxAdapter(
-                  child: _MenuGroup(items: [
-                    _MenuItem(
-                      icon: Icons.help_outline_rounded,
-                      color: const Color(0xFF4F8EF7),
-                      label: 'Trung tâm hỗ trợ',
-                      onTap: () {},
-                    ),
-                    _MenuItem(
-                      icon: Icons.info_outline_rounded,
-                      color: const Color(0xFF7C5CFC),
-                      label: 'Về ứng dụng',
-                      trailing: const Text(
-                        'v1.0.0',
-                        style: TextStyle(fontSize: 12, color: Color(0xFFAAAAAA)),
+                  child: _MenuGroup(
+                    items: [
+                      _MenuItem(
+                        icon: Icons.help_outline_rounded,
+                        color: const Color(0xFF4F8EF7),
+                        label: 'Trung tâm hỗ trợ',
+                        onTap: () => _launchUrl(AppConfig.apiUrlSupport),
                       ),
-                      onTap: () {},
-                    ),
-                  ]),
+
+                      _MenuItem(
+                        icon: Icons.privacy_tip_outlined,
+                        color: const Color(0xFF4F8EF7),
+                        label: 'Chính sách và bảo mật',
+                        onTap: () => _launchUrl(AppConfig.apiUrlPrivacyPolicy),
+                      ),
+
+                      _MenuItem(
+                        icon: Icons.description_outlined,
+                        color: const Color(0xFF4F8EF7),
+                        label: 'Điều khoản sử dụng',
+                        onTap: () => _launchUrl(AppConfig.apiUrlTerm),
+                      ),
+                      _MenuItem(
+                        icon: Icons.info_outline_rounded,
+                        color: const Color(0xFF7C5CFC),
+                        label: 'Về ứng dụng',
+                        trailing: const Text(
+                          'v1.0.0',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFFAAAAAA),
+                          ),
+                        ),
+                        onTap: () {},
+                      ),
+                    ],
+                  ),
                 ),
 
                 // ── Nút đăng xuất ──────────────────────────────────────
@@ -442,14 +463,18 @@ class _AccountTabState extends State<AccountCustomerTab>
                           color: const Color(0xFFFFEEEA),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                              color: const Color(0xFFFF4B4B).withOpacity(0.25),
-                              width: 1.5),
+                            color: const Color(0xFFFF4B4B).withOpacity(0.25),
+                            width: 1.5,
+                          ),
                         ),
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.logout_rounded,
-                                color: Color(0xFFFF4B4B), size: 20),
+                            Icon(
+                              Icons.logout_rounded,
+                              color: Color(0xFFFF4B4B),
+                              size: 20,
+                            ),
                             SizedBox(width: 8),
                             Text(
                               'Đăng xuất',
@@ -478,14 +503,18 @@ class _AccountTabState extends State<AccountCustomerTab>
                           color: const Color(0xFFFFEEEA),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                              color: const Color(0xFFFF4B4B).withOpacity(0.25),
-                              width: 1.5),
+                            color: const Color(0xFFFF4B4B).withOpacity(0.25),
+                            width: 1.5,
+                          ),
                         ),
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.account_circle,
-                                color: Color(0xFFFF4B4B), size: 20),
+                            Icon(
+                              Icons.account_circle,
+                              color: Color(0xFFFF4B4B),
+                              size: 20,
+                            ),
                             SizedBox(width: 8),
                             Text(
                               'Xóa tài khoản',
@@ -578,7 +607,9 @@ class _AccountTabState extends State<AccountCustomerTab>
                     const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 3),
+                        horizontal: 10,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white24,
                         borderRadius: BorderRadius.circular(20),
@@ -605,8 +636,11 @@ class _AccountTabState extends State<AccountCustomerTab>
                     color: Colors.white24,
                     borderRadius: BorderRadius.circular(11),
                   ),
-                  child: const Icon(Icons.edit_outlined,
-                      color: Colors.white, size: 18),
+                  child: const Icon(
+                    Icons.edit_outlined,
+                    color: Colors.white,
+                    size: 18,
+                  ),
                 ),
               ),
             ],
@@ -775,8 +809,11 @@ class _MenuItem extends StatelessWidget {
               ),
             ),
             trailing ??
-                Icon(Icons.chevron_right_rounded,
-                    color: Colors.grey.withOpacity(0.5), size: 20),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: Colors.grey.withOpacity(0.5),
+                  size: 20,
+                ),
           ],
         ),
       ),

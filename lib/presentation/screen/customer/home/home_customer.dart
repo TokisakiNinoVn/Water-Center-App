@@ -61,11 +61,9 @@ class _HomeCustomerState extends State<HomeCustomer> {
           children: [
             /// PAGE CONTENT
             Positioned.fill(
-              child: IndexedStack(
-                index: _selectedIndex,
-                children: _pages,
-              ),
+              child: IndexedStack(index: _selectedIndex, children: _pages),
             ),
+
             /// FLOATING NAVBAR
             Positioned(
               left: 16,
@@ -119,18 +117,17 @@ class _HomeCustomerState extends State<HomeCustomer> {
                   //   index: 2,
                   // ),
                   // const SizedBox(width: 56),
-
                   const SizedBox(width: 76),
                   _buildNavItem(
                     icon: Icons.notifications,
                     label: "Thông báo",
                     index: 1,
                   ),
-                  _buildNavItem(
-                    icon: Icons.message,
-                    label: "Tin nhắn",
-                    index: 2,
-                  ),
+                  // _buildNavItem(
+                  //   icon: Icons.message,
+                  //   label: "Tin nhắn",
+                  //   index: 2,
+                  // ),
                   _buildNavItem(
                     icon: Icons.person_outline,
                     label: "Tài khoản",
@@ -140,6 +137,7 @@ class _HomeCustomerState extends State<HomeCustomer> {
               ),
             ),
           ),
+
           /// HOME BUTTON
           Positioned(
             top: 0,
@@ -217,10 +215,7 @@ class _HomeCustomerState extends State<HomeCustomer> {
                         decoration: BoxDecoration(
                           color: Colors.red,
                           shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white,
-                            width: 1.5,
-                          ),
+                          border: Border.all(color: Colors.white, width: 1.5),
                         ),
                       ),
                     ),

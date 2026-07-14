@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:clean_water/data/configs/app_config.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
+import 'package:clean_water/data/configs/app_config.dart';
 import '../../presentation/common/snackbar.dart';
 import '../storage/local_storage.dart';
 import 'package:clean_water/core/storage/shared_preferences_utils.dart';
@@ -166,7 +166,7 @@ class ApiMethodsPrivate {
       }
 
       if(AppConfig.isViewLogResponse) {
-        appLog('[RAW RESPONSE] $url | Status: ${res.statusCode} | Body: ${res.body}');
+        appLog('[RAW RESPONSE] $url | Status: ${res.statusCode} | Body: ${res.body} - ', data: res.body);
       }
 
       // Handle 401 Unauthorized
