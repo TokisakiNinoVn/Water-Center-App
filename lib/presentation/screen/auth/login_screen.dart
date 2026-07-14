@@ -604,18 +604,18 @@ class LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
               ),
-              const Spacer(),
-              GestureDetector(
-                onTap: () => context.go(AppRouterConfig.forgotPassword),
-                child: const Text(
-                  'Quên mật khẩu?',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: _cAccent1,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              // const Spacer(),
+              // GestureDetector(
+              //   onTap: () => context.go(AppRouterConfig.forgotPassword),
+              //   child: const Text(
+              //     'Quên mật khẩu?',
+              //     style: TextStyle(
+              //       fontSize: 13,
+              //       color: _cAccent1,
+              //       fontWeight: FontWeight.w600,
+              //     ),
+              //   ),
+              // ),
             ],
           ),
 
