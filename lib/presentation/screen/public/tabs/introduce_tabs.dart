@@ -8,10 +8,6 @@ class IntroducePublicTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   title: const Text('Giới thiệu', style: TextStyle(color: Colors.white),),
-      //   backgroundColor: ColorConfig.primary,
-      // ),
       backgroundColor: ColorConfig.backgroundPrimary,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

@@ -845,7 +845,6 @@ class LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // ─── Helpers ──────────────────────────────────────────────────────────────
   Widget _buildFieldLabel(String text) {
     return Text(
       text,

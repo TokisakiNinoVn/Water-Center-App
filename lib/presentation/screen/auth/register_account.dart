@@ -178,24 +178,6 @@ class _RegisterAccountState extends State<RegisterAccount>
     return null;
   }
 
-  String? _validateEmail(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Vui lòng nhập email';
-    }
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(value.trim())) {
-      return 'Email không hợp lệ';
-    }
-    return null;
-  }
-
-  String? _validateAddress(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Vui lòng nhập địa chỉ';
-    }
-    return null;
-  }
-
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Vui lòng nhập mật khẩu';
@@ -334,7 +316,7 @@ class _RegisterAccountState extends State<RegisterAccount>
                 textInputAction: TextInputAction.next,
                 keyboardType: TextInputType.emailAddress,
                 onFieldSubmitted: (_) => _addressFocus.requestFocus(),
-                validator: _validateEmail,
+                // validator: _validateEmail,
               ),
               _divider(),
               _buildField(
@@ -344,7 +326,7 @@ class _RegisterAccountState extends State<RegisterAccount>
                 focusNode: _addressFocus,
                 textInputAction: TextInputAction.next,
                 onFieldSubmitted: (_) => _passwordFocus.requestFocus(),
-                validator: _validateAddress,
+                // validator: _validateAddress,
               ),
             ]),
           ),

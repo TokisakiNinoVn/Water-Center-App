@@ -7,15 +7,6 @@ class PolicyPublicTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   title: Center(
-      //     child: Text(
-      //         "CHÍNH SÁCH BẢO MẬT \nTHÔNG TIN KHÁCH HÀNG",
-      //       style: TextStyle(fontSize: 14, ),
-      //     ),
-      //   ),
-      //   backgroundColor: ColorConfig.backgroundPrimary,
-      // ),
       backgroundColor: ColorConfig.backgroundPrimary,
       body: Container(
         padding: EdgeInsets.only(top: 40, left: 10, right: 10),
