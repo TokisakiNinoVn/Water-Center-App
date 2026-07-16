@@ -83,7 +83,7 @@ class _RegisterAccountState extends State<RegisterAccount>
         'password_confirmation': _confirmPasswordController.text.trim(),
         'gender': _selectedGender,
         'address': _addressController.text.trim(),
-        'date_of_birth': _selectedDateOfBirth?.toIso8601String().split('T').first ?? '',
+        // 'date_of_birth': _selectedDateOfBirth?.toIso8601String().split('T').first ?? '',
       };
 
       final success = await provider.registerAccountProvider(registrationData);
@@ -206,11 +206,15 @@ class _RegisterAccountState extends State<RegisterAccount>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text("Đăng ký tài khoản"),
+        backgroundColor: const Color(0xFFF5F6FA),
+      ),
       backgroundColor: const Color(0xFFF5F6FA),
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          _buildSliverAppBar(),
+          // _buildSliverAppBar(),
           SliverToBoxAdapter(
             child: FadeTransition(
               opacity: _fadeAnim,
@@ -258,16 +262,16 @@ class _RegisterAccountState extends State<RegisterAccount>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.person_add_rounded, size: 64, color: Colors.white70),
-                SizedBox(height: 12),
-                Text(
-                  'Tạo tài khoản mới',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                // Icon(Icons.person_add_rounded, size: 64, color: Colors.white70),
+                // SizedBox(height: 12),
+                // Text(
+                //   'Tạo tài khoản mới',
+                //   style: TextStyle(
+                //     color: Colors.white,
+                //     fontSize: 16,
+                //     fontWeight: FontWeight.w500,
+                //   ),
+                // ),
               ],
             ),
           ),
@@ -318,27 +322,27 @@ class _RegisterAccountState extends State<RegisterAccount>
                 onFieldSubmitted: (_) => _addressFocus.requestFocus(),
                 // validator: _validateEmail,
               ),
-              _divider(),
-              _buildField(
-                controller: _addressController,
-                label: 'Địa chỉ',
-                icon: Icons.location_on_outlined,
-                focusNode: _addressFocus,
-                textInputAction: TextInputAction.next,
-                onFieldSubmitted: (_) => _passwordFocus.requestFocus(),
-                // validator: _validateAddress,
-              ),
+              // _divider(),
+              // _buildField(
+              //   controller: _addressController,
+              //   label: 'Địa chỉ',
+              //   icon: Icons.location_on_outlined,
+              //   focusNode: _addressFocus,
+              //   textInputAction: TextInputAction.next,
+              //   onFieldSubmitted: (_) => _passwordFocus.requestFocus(),
+              //   // validator: _validateAddress,
+              // ),
             ]),
           ),
           const SizedBox(height: 20),
-          _sectionLabel('Ngày sinh'),
-          const SizedBox(height: 12),
-          _buildDateOfBirthPicker(),
-          const SizedBox(height: 20),
-          _sectionLabel('Giới tính'),
-          const SizedBox(height: 12),
-          _buildGenderSelector(),
-          const SizedBox(height: 20),
+          // _sectionLabel('Ngày sinh'),
+          // const SizedBox(height: 12),
+          // _buildDateOfBirthPicker(),
+          // const SizedBox(height: 20),
+          // _sectionLabel('Giới tính'),
+          // const SizedBox(height: 12),
+          // _buildGenderSelector(),
+          // const SizedBox(height: 20),
           _sectionLabel('Bảo mật'),
           const SizedBox(height: 12),
           Form(
